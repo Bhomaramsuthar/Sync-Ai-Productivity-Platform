@@ -114,15 +114,15 @@ Pipeline:
 ```text
 Document
     ↓
-Text Extraction
+Text Extraction (PDF, TXT, MD, DOCX, CSV)
     ↓
-Chunking
+Text Chunking (Paragraph-aware, 800-1000 chars, 150 chars overlap)
     ↓
-Embedding Generation (FastAPI / external API)
+Embedding Generation (FastEmbed BAAI/bge-small-en-v1.5, 384 dim, local ONNX CPU)
     ↓
-pgvector (Supabase)
+pgvector vector(384) in Supabase PostgreSQL (document_chunks table)
     ↓
-Semantic Search
+Semantic Search (Cosine / vector distance)
     ↓
 Relevant Chunks
     ↓

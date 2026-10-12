@@ -12,3 +12,5 @@ venv/
 .vscode/
 coverage/
 .pytest_cache/
+*.db
+*.sqlite*

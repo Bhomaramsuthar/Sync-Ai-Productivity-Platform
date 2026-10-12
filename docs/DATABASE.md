@@ -99,21 +99,34 @@ No Redis schema.
 
 ## Document
 - id (UUID)
-- workspaceId (UUID)
 - projectId (UUID)
-- title
-- content
-- createdBy (UUID)
-- createdAt
-- updatedAt
+- uploaderId (UUID)
+- filename
+- storageKey
+- contentType
+- fileSize (bytes)
+- status (UPLOADED, PROCESSING, READY, FAILED)
+- extractedText (TEXT)
+- extractedChars (Integer)
+- processingError (TEXT)
+- processedAt (timestamp)
+- indexingStatus (PENDING, PROCESSING, READY, FAILED)
+- indexingError (TEXT)
+- indexedAt (timestamp)
+- chunkCount (Integer)
+- createdAt (timestamp)
 
 ## DocumentChunk
 - id (UUID)
-- documentId (UUID)
-- content
-- chunkIndex
-- embedding (pgvector)
-- createdAt
+- documentId (UUID, FK -> documents.id ON DELETE CASCADE)
+- projectId (UUID, FK -> projects.id ON DELETE CASCADE)
+- chunkIndex (Integer)
+- content (TEXT)
+- embedding (pgvector vector(384), queried via cosine distance operator `<=>`)
+- charCount (Integer)
+- metadataJson (TEXT)
+- createdAt (timestamp)
+- Indexing note: Currently evaluated via exact nearest-neighbor scan; for large datasets (>10,000 chunks), HNSW or IVFFlat with `vector_cosine_ops` can be created via Alembic.
 
 ## CalendarEvent
 - id (UUID)

@@ -3,11 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { workspaceService, memberService } from '../services/workspaceService';
 import type { Workspace, Member } from '../services/workspaceService';
-import api from '../services/api';
+import { Settings, Users, ArrowLeft, Trash2, Edit2, Plus, X } from 'lucide-react';
 
 const WorkspaceDetail = () => {
   const { workspaceId } = useParams<{ workspaceId: string }>();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
@@ -108,120 +108,163 @@ const WorkspaceDetail = () => {
     }
   };
 
-  const handleLogout = async () => {
-    try { await api.post('/auth/logout'); } catch {}
-    logout();
+  const roleBadgeClass = (role: string) => {
+    switch (role) {
+      case 'OWNER': return 'badge badge-primary';
+      case 'ADMIN': return 'badge badge-warning';
+      default: return 'badge badge-neutral';
+    }
   };
 
-  if (loading) return <div className="loading-screen">Loading workspace...</div>;
-  if (error) return (
-    <div className="page-container">
-      <div className="error-message" style={{ maxWidth: 500, margin: '4rem auto' }}>{error}</div>
-      <div style={{ textAlign: 'center' }}>
-        <button className="btn-secondary" onClick={() => navigate('/workspaces')}>← Back to Workspaces</button>
-      </div>
+  if (loading) return (
+    <div className="loading-screen">
+      <div className="spinner"></div>
+      <p>Loading workspace...</p>
     </div>
   );
+
+  if (error) return (
+    <div className="flex flex-col items-center justify-center pt-12 gap-4">
+      <div className="error-message">{error}</div>
+      <button className="btn btn-secondary" onClick={() => navigate('/workspaces')}>
+        <ArrowLeft size={16} /> Back to Workspaces
+      </button>
+    </div>
+  );
+
   if (!workspace) return null;
 
   return (
-    <div className="page-container">
-      <header className="page-header">
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-            <button className="btn-link" onClick={() => navigate('/workspaces')}>← Workspaces</button>
-          </div>
+    <div>
+      <button className="btn btn-ghost mb-4" onClick={() => navigate('/workspaces')}>
+        <ArrowLeft size={16} /> Workspaces
+      </button>
+
+      <div className="page-header">
+        <div className="flex-1">
           {editing ? (
-            <form onSubmit={handleUpdateWorkspace} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <input className="form-input" value={editName} onChange={e => setEditName(e.target.value)} style={{ width: 250 }} />
-              <button type="submit" className="btn-primary" style={{ width: 'auto', padding: '0.5rem 1rem' }}>Save</button>
-              <button type="button" className="btn-secondary" onClick={() => setEditing(false)}>Cancel</button>
+            <form onSubmit={handleUpdateWorkspace} className="flex flex-col gap-4 mb-4">
+              <div className="flex gap-2">
+                <input className="form-input" style={{ width: 300, fontSize: '1.25rem', fontWeight: 600 }} value={editName} onChange={e => setEditName(e.target.value)} />
+                <button type="submit" className="btn btn-primary">Save</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setEditing(false)}>Cancel</button>
+              </div>
+              <textarea className="form-input" style={{ width: '100%', maxWidth: 500 }} rows={2} value={editDesc} onChange={e => setEditDesc(e.target.value)} />
             </form>
           ) : (
-            <h1 className="page-title">{workspace.name}</h1>
-          )}
-          <p className="page-subtitle">{workspace.description || 'No description'}</p>
-        </div>
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <span className={`badge ${workspace.current_user_role === 'OWNER' ? 'badge-owner' : workspace.current_user_role === 'ADMIN' ? 'badge-admin' : 'badge-member'}`}>
-            {workspace.current_user_role}
-          </span>
-          <span className="text-muted">{user?.name}</span>
-          <button onClick={handleLogout} className="btn-secondary">Sign Out</button>
-        </div>
-      </header>
-
-      {/* Workspace Settings */}
-      {canManage && (
-        <div className="section-card" style={{ marginBottom: '2rem' }}>
-          <h2 className="section-title">Workspace Settings</h2>
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            {!editing && <button className="btn-secondary" onClick={() => setEditing(true)}>Edit Details</button>}
-            {editing && (
-              <div className="form-group" style={{ width: '100%' }}>
-                <label className="form-label">Description</label>
-                <textarea className="form-input" value={editDesc} onChange={e => setEditDesc(e.target.value)} rows={2} style={{ resize: 'vertical' }} />
+            <>
+              <div className="flex items-center gap-3 mb-1">
+                <h1 className="page-title mb-0">{workspace.name}</h1>
+                <span className={roleBadgeClass(workspace.current_user_role)}>
+                  {workspace.current_user_role}
+                </span>
               </div>
-            )}
-            {isOwner && <button className="btn-danger" onClick={handleDeleteWorkspace}>Delete Workspace</button>}
-          </div>
-        </div>
-      )}
-
-      {/* Members Section */}
-      <div className="section-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 className="section-title" style={{ margin: 0 }}>Members ({members.length})</h2>
-          {canManage && (
-            <button className="btn-primary" style={{ width: 'auto', padding: '0.5rem 1rem' }} onClick={() => setShowAddMember(!showAddMember)}>
-              {showAddMember ? 'Cancel' : '+ Add Member'}
-            </button>
+              <p className="page-subtitle text-base">{workspace.description || 'No description'}</p>
+            </>
           )}
         </div>
+        
+        <div className="flex items-center gap-3">
+          <button className="btn btn-primary" onClick={() => navigate(`/workspaces/${workspaceId}/projects`)}>
+            View Projects
+          </button>
+        </div>
+      </div>
 
-        {showAddMember && (
-          <form onSubmit={handleAddMember} className="add-member-form">
-            {addError && <div className="error-message">{addError}</div>}
-            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <input className="form-input" style={{ flex: 2, minWidth: 200 }} type="email" placeholder="member@example.com" value={addEmail} onChange={e => setAddEmail(e.target.value)} required />
-              <select className="form-input" style={{ flex: 1, minWidth: 120 }} value={addRole} onChange={e => setAddRole(e.target.value)}>
-                <option value="MEMBER">MEMBER</option>
-                <option value="ADMIN">ADMIN</option>
-              </select>
-              <button type="submit" className="btn-primary" style={{ width: 'auto', padding: '0.5rem 1rem' }} disabled={addLoading}>
-                {addLoading ? 'Adding...' : 'Add'}
-              </button>
+      <div className="flex flex-col gap-6" style={{ maxWidth: 900 }}>
+        {/* Workspace Settings */}
+        {canManage && !editing && (
+          <div className="card">
+            <div className="card-header">
+              <div className="flex items-center gap-2">
+                <Settings size={18} className="text-muted" />
+                <h3 className="card-title">Settings</h3>
+              </div>
             </div>
-          </form>
+            <div className="card-body flex items-center gap-4">
+              <button className="btn btn-secondary" onClick={() => setEditing(true)}>
+                <Edit2 size={16} /> Edit Details
+              </button>
+              {isOwner && (
+                <button className="btn btn-danger ml-auto" onClick={handleDeleteWorkspace}>
+                  <Trash2 size={16} /> Delete Workspace
+                </button>
+              )}
+            </div>
+          </div>
         )}
 
-        <div className="members-list">
-          {members.map(m => (
-            <div key={m.id} className="member-row">
-              <div className="member-info">
-                <div className="member-avatar">{m.user_name.charAt(0).toUpperCase()}</div>
-                <div>
-                  <div className="member-name">{m.user_name}</div>
-                  <div className="text-muted text-sm">{m.user_email}</div>
+        {/* Members Section */}
+        <div className="card">
+          <div className="card-header">
+            <div className="flex items-center gap-2">
+              <Users size={18} className="text-muted" />
+              <h3 className="card-title">Members ({members.length})</h3>
+            </div>
+            {canManage && (
+              <button className={`btn ${showAddMember ? 'btn-secondary' : 'btn-primary'}`} onClick={() => setShowAddMember(!showAddMember)}>
+                {showAddMember ? <><X size={16} /> Cancel</> : <><Plus size={16} /> Add Member</>}
+              </button>
+            )}
+          </div>
+
+          {showAddMember && (
+            <div className="card-body border-b border-subtle bg-surface-hover">
+              <form onSubmit={handleAddMember} className="flex gap-3 items-start flex-wrap">
+                <div className="flex-1 min-w-[200px]">
+                  <input className="form-input" type="email" placeholder="member@example.com" value={addEmail} onChange={e => setAddEmail(e.target.value)} required />
                 </div>
-              </div>
-              <div className="member-actions">
-                <span className="text-muted text-sm">Joined {new Date(m.joined_at).toLocaleDateString()}</span>
-                {canManage && m.role !== 'OWNER' ? (
-                  <select className="form-input role-select" value={m.role} onChange={e => handleChangeRole(m.user_id, e.target.value)}>
+                <div className="w-32">
+                  <select className="form-select" value={addRole} onChange={e => setAddRole(e.target.value)}>
                     <option value="MEMBER">MEMBER</option>
                     <option value="ADMIN">ADMIN</option>
-                    {isOwner && <option value="OWNER">OWNER</option>}
                   </select>
-                ) : (
-                  <span className={`badge ${m.role === 'OWNER' ? 'badge-owner' : m.role === 'ADMIN' ? 'badge-admin' : 'badge-member'}`}>{m.role}</span>
-                )}
-                {canManage && m.user_id !== user?.id && m.role !== 'OWNER' && (
-                  <button className="btn-icon-danger" onClick={() => handleRemoveMember(m.user_id, m.user_name)} title="Remove member">✕</button>
-                )}
-              </div>
+                </div>
+                <button type="submit" className="btn btn-primary" disabled={addLoading}>
+                  {addLoading ? 'Adding...' : 'Add'}
+                </button>
+              </form>
+              {addError && <div className="error-message mt-3 mb-0">{addError}</div>}
             </div>
-          ))}
+          )}
+
+          <div className="item-list" style={{ gap: 0 }}>
+            {members.map((m, index) => (
+              <div key={m.id} className="list-item" style={{ border: 'none', borderRadius: 0, borderBottom: index < members.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-surface-active text-sm font-medium">
+                    {m.user_name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="font-medium">{m.user_name}</div>
+                    <div className="text-muted text-sm">{m.user_email}</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  <span className="text-muted text-xs hidden sm:inline-block">Joined {new Date(m.joined_at).toLocaleDateString()}</span>
+                  
+                  {canManage && m.role !== 'OWNER' ? (
+                    <select className="form-select text-sm py-1" style={{ width: 110 }} value={m.role} onChange={e => handleChangeRole(m.user_id, e.target.value)}>
+                      <option value="MEMBER">MEMBER</option>
+                      <option value="ADMIN">ADMIN</option>
+                      {isOwner && <option value="OWNER">OWNER</option>}
+                    </select>
+                  ) : (
+                    <span className={roleBadgeClass(m.role)}>{m.role}</span>
+                  )}
+                  
+                  {canManage && m.user_id !== user?.id && m.role !== 'OWNER' ? (
+                    <button className="btn-icon btn-ghost text-danger hover:bg-danger/10" onClick={() => handleRemoveMember(m.user_id, m.user_name)} title="Remove member">
+                      <Trash2 size={16} />
+                    </button>
+                  ) : (
+                    <div style={{ width: 32 }}></div> /* Spacer for alignment */
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

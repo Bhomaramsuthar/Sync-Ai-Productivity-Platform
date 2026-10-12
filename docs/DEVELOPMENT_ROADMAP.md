@@ -79,36 +79,38 @@ Documents:
 
 # Phase 5 — AI & RAG
 
-### Week 9
-AI Chat:
-- FastAPI AI integration
-- LLM integration
-- Chat interface
-- Conversation history
-- Project summary
+### Week 8 (Completed)
+Document Processing:
+- Document upload and storage integration (Supabase Storage)
+- Dedicated text extraction (PDF, TXT, MD, DOCX, CSV)
+- Extraction status pipeline (UPLOADED, PROCESSING, READY, FAILED)
+- Safe error handling, retries, and extracted text preview
+
+### Week 9 (Completed)
+Document Chunking & Embeddings:
+- Paragraph- and line-aware text chunking (800-1000 chars, 150 chars overlap)
+- Provider-neutral embedding interface (FastEmbed BAAI/bge-small-en-v1.5, OpenAI, Mock)
+- Supabase PostgreSQL pgvector persistence (`vector(384)`, `document_chunks` table)
+- Idempotent re-indexing, cascade cleanup, and background pipeline integration
+- Indexing status API, chunk inspection, and frontend dual-status / retry UI
 
 ### Week 10
-AI Task Generation:
-- Task generation
-- Task prioritization
-- Meeting summarization
-- Action-item extraction
+Semantic Search & Document RAG:
+- Vector similarity search (Cosine / L2 distance in pgvector)
+- RAG question answering grounded in document chunks
+- Context retrieval and citation linking
 
 ### Week 11
-RAG:
-- Document extraction
-- Chunking
-- Embeddings
-- pgvector (Supabase)
-- Semantic search
+AI Task Generation & Summarization:
+- Task generation and prioritization
+- Meeting and document summarization
+- Action-item extraction
 
 ### Week 12
-Tool Calling:
-- Tool calling
-- Backend API integration
-- get_tasks(), create_task(), update_task()
-- Authorization
-- User confirmation
+AI Chat & Tool Calling:
+- Natural language chat assistant
+- Authorized tool calling (get_tasks, create_task, update_task)
+- Conversation history and user confirmation flows
 
 ---
 
@@ -127,4 +129,4 @@ Testing:
 - API testing
 - AI testing (Response quality, RAG, Hallucination)
 - Security & Performance testing
-- Final Project Ready
+- Final Project Ready+

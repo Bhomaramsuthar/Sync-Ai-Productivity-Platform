@@ -1,4 +1,4 @@
-from logging.config import fileConfig
++from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -22,6 +22,10 @@ from app.core.config import settings
 from app.core.database import Base
 from app.users import models  # register models
 from app.workspaces import models as workspace_models  # register workspace models
+from app.projects import models as project_models
+from app.tasks import models as task_models
+from app.documents import models as document_models
+from app.rag import models as rag_models
 
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 

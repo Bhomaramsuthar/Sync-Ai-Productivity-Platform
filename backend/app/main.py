@@ -15,6 +15,14 @@ app.add_middleware(
 
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(workspace_router, prefix="/api/v1/workspaces", tags=["workspaces"])
+from app.projects.router import router as project_router
+from app.tasks.router import router as task_router
+from app.documents.router import router as document_router
+from app.rag.router import router as rag_router
+app.include_router(project_router, prefix="/api/v1", tags=["projects"])
+app.include_router(task_router, prefix="/api/v1", tags=["tasks"])
+app.include_router(document_router, prefix="/api/v1", tags=["documents"])
+app.include_router(rag_router, prefix="/api/v1", tags=["rag"])
 
 @app.get("/health")
 def health_check():

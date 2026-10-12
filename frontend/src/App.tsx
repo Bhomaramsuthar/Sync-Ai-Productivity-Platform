@@ -6,6 +6,9 @@ import Register from './pages/Register';
 import Workspaces from './pages/Workspaces';
 import CreateWorkspace from './pages/CreateWorkspace';
 import WorkspaceDetail from './pages/WorkspaceDetail';
+import ProjectsList from './pages/ProjectsList';
+import CreateProject from './pages/CreateProject';
+import ProjectDashboard from './pages/ProjectDashboard';
 import './index.css';
 
 function App() {
@@ -21,6 +24,9 @@ function App() {
             <Route path="/workspaces" element={<Workspaces />} />
             <Route path="/workspaces/new" element={<CreateWorkspace />} />
             <Route path="/workspaces/:workspaceId" element={<WorkspaceDetail />} />
+            <Route path="/workspaces/:workspaceId/projects" element={<ProjectsList />} />
+            <Route path="/workspaces/:workspaceId/projects/new" element={<CreateProject />} />
+            <Route path="/projects/:projectId/*" element={<ProjectDashboard />} />
             
             {/* Catch all for authenticated users */}
             <Route path="*" element={<Navigate to="/workspaces" replace />} />

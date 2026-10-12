@@ -24,6 +24,7 @@ class Workspace(Base):
 
     owner = relationship("User", foreign_keys=[owner_id])
     members = relationship("WorkspaceMember", back_populates="workspace", cascade="all, delete-orphan")
+    projects = relationship("Project", back_populates="workspace", cascade="all, delete-orphan")
 
 
 class WorkspaceMember(Base):

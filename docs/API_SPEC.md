@@ -93,12 +93,17 @@ Base URL: `/api/v1`
 
 ## Documents
 
-`POST /api/v1/workspaces/{workspaceId}/documents`
-`GET /api/v1/workspaces/{workspaceId}/documents`
-`GET /api/v1/documents/{documentId}`
-`PUT /api/v1/documents/{documentId}`
-`DELETE /api/v1/documents/{documentId}`
-`POST /api/v1/documents/{documentId}/upload`
+`POST /api/v1/projects/{projectId}/documents` - Upload document and enqueue background text extraction
+`GET /api/v1/projects/{projectId}/documents` - List project documents
+`GET /api/v1/documents/{documentId}` - Get document details and download URL
+`GET /api/v1/documents/{documentId}/status` - Get document processing status and safe error details
+`GET /api/v1/documents/{documentId}/text` - Get extracted plain text and character count (authorized project members only)
+`POST /api/v1/documents/{documentId}/retry` - Retry text extraction for a failed or stalled document
+`GET /api/v1/documents/{documentId}/indexing-status` - Get document vector indexing status and chunk count
+`POST /api/v1/documents/{documentId}/retry-indexing` - Retry vector indexing for a document whose text extraction is READY
+`GET /api/v1/documents/{documentId}/chunks` - Retrieve chunk metadata and text snippets for project members
+`POST /api/v1/projects/{projectId}/documents/search` - Semantic search across indexed document chunks using pgvector
+`DELETE /api/v1/documents/{documentId}` - Delete document, storage file, and all associated vector chunks
 
 ---
 
