@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { type Project } from '../services/projectService';
 import { 
   documentService, 
@@ -11,10 +12,11 @@ import { memberService, type Member } from '../services/workspaceService';
 import { 
   Upload, Search, Trash2, Download, FileText, File, 
   CheckCircle2, AlertCircle, AlertTriangle, RotateCw, 
-  Clock, Copy, Check, X, Eye, Layers, Sparkles, Compass, Info
+  Clock, Copy, Check, X, Eye, Layers, Sparkles, Compass, Info, MessageSquare
 } from 'lucide-react';
 
 export const DocumentLibrary = ({ project }: { project: Project }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'documents' | 'search'>('documents');
   const [documents, setDocuments] = useState<Document[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -391,6 +393,14 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
           >
             <Sparkles size={15} className="mr-1.5" />
             Semantic Search
+          </button>
+          <button 
+            className="btn btn-sm btn-ghost"
+            onClick={() => navigate(`/projects/${project.id}/chat`)}
+            title="Chat with documents using conversational RAG"
+          >
+            <MessageSquare size={15} className="mr-1.5 text-primary" />
+            Document Chat
           </button>
         </div>
 

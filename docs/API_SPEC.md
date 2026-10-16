@@ -124,23 +124,25 @@ Base URL: `/api/v1`
 
 ---
 
-## AI
+## AI & Conversational RAG (Week 11)
 
-`POST /api/v1/ai/chat`
-`GET /api/v1/ai/conversations`
-`GET /api/v1/ai/conversations/{conversationId}/messages`
-`POST /api/v1/ai/summarize`
-`POST /api/v1/ai/generate-tasks`
-`POST /api/v1/ai/prioritize-tasks`
-`POST /api/v1/ai/project-summary`
+`GET /api/v1/projects/{projectId}/conversations` - List conversations for an authorized project member
+`POST /api/v1/projects/{projectId}/conversations` - Create a conversation in a project (optional initial question)
+`GET /api/v1/conversations/{conversationId}` - Retrieve full conversation detail and message history with structured citations
+`PATCH /api/v1/conversations/{conversationId}` - Rename conversation title
+`DELETE /api/v1/conversations/{conversationId}` - Delete conversation and all associated messages
+`POST /api/v1/conversations/{conversationId}/messages` - Submit question, perform pgvector retrieval, execute grounded generation, and persist message with citations
 
 ---
 
-## RAG
+## AI & Productivity (Week 12 Implemented)
 
-`POST /api/v1/rag/documents/{documentId}/process`
-`POST /api/v1/rag/search`
-`POST /api/v1/ai/document-question`
+`POST /api/v1/projects/{projectId}/ai/task-assistant/expand` - Expand short task title into description, acceptance criteria, and suggested priority (proposals only, never auto-persists)
+`POST /api/v1/projects/{projectId}/ai/task-assistant/breakdown` - Break task into proposed subtasks with suggested priorities for user review & confirmation
+`POST /api/v1/projects/{projectId}/ai/task-assistant/suggest-priority` - Suggest objective task priority (LOW, MEDIUM, HIGH, URGENT) with transparent reasoning
+`POST /api/v1/projects/{projectId}/ai/task-assistant/unblock` - Analyze user-identified task blocker and recommend immediate next action and unblocking steps
+`POST /api/v1/projects/{projectId}/ai/summary` - Generate authorized project progress summary distinguishing live database metrics from AI narrative
+`GET /api/v1/projects/{projectId}/ai/insights` - Retrieve context-aware productivity recommendations derived from deterministic rules linking to real task records
 
 ---
 

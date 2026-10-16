@@ -1,7 +1,7 @@
 import React from 'react';
 import { type Task } from '../services/taskService';
 import { type Member } from '../services/workspaceService';
-import { X, Calendar, User, Flag, CheckCircle2, Clock, Edit2 } from 'lucide-react';
+import { X, Calendar, User, Flag, CheckCircle2, Clock, Edit2, Sparkles } from 'lucide-react';
 
 interface TaskDetailModalProps {
   task: Task | null;
@@ -9,6 +9,7 @@ interface TaskDetailModalProps {
   members: Member[];
   onEdit?: (task: Task) => void;
   onStatusChange?: (taskId: string, newStatus: string) => void;
+  onOpenAIAssistant?: (task: Task) => void;
 }
 
 export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
@@ -17,6 +18,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   members,
   onEdit,
   onStatusChange,
+  onOpenAIAssistant,
 }) => {
   if (!task) return null;
 
@@ -146,6 +148,15 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
         </div>
 
         <div className="modal-footer">
+          {onOpenAIAssistant && (
+            <button
+              className="btn btn-secondary text-sm"
+              onClick={() => onOpenAIAssistant(task)}
+              title="Break down into subtasks or get unblocking advice"
+            >
+              <Sparkles size={14} className="mr-1.5 text-accent-primary" /> AI Assistant
+            </button>
+          )}
           {onEdit && (
             <button 
               className="btn btn-secondary text-sm" 

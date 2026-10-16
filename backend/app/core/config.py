@@ -22,6 +22,38 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     OPENAI_BASE_URL: str = ""
 
+    # Conversational RAG & LLM Generation
+    LLM_PROVIDER: str = "openai"  # openai, groq, mock
+    LLM_API_KEY: str = ""
+    GROQ_API_KEY: str = ""
+    LLM_BASE_URL: str = ""
+    LLM_MODEL: str = "gpt-4o-mini"
+    LLM_TEMPERATURE: float = 0.1
+    LLM_MAX_TOKENS: int = 1000
+    LLM_TIMEOUT_SECONDS: float = 30.0
+
+    @property
+    def effective_llm_api_key(self) -> str:
+        if self.LLM_PROVIDER.lower() in ("groq", "groq-cloud"):
+            return self.LLM_API_KEY or self.GROQ_API_KEY or self.OPENAI_API_KEY
+        return self.LLM_API_KEY or self.OPENAI_API_KEY
+
+    @property
+    def effective_llm_base_url(self) -> str:
+        if self.LLM_BASE_URL:
+            return self.LLM_BASE_URL.rstrip("/")
+        if self.LLM_PROVIDER.lower() in ("groq", "groq-cloud"):
+            return "https://api.groq.com/openai/v1"
+        return (self.OPENAI_BASE_URL or "https://api.openai.com/v1").rstrip("/")
+
+    @property
+    def effective_llm_model(self) -> str:
+        is_groq = self.LLM_PROVIDER.lower() in ("groq", "groq-cloud") or "groq.com" in self.effective_llm_base_url
+        if is_groq:
+            if not self.LLM_MODEL or self.LLM_MODEL in ("gpt-4o-mini", "llama-3.3-70b-versatile"):
+                return "openai/gpt-oss-120b"
+        return self.LLM_MODEL or "gpt-4o-mini"
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()

@@ -6,6 +6,7 @@ import TaskList from './TaskList';
 import KanbanBoard from './KanbanBoard';
 import ProjectCalendar from './ProjectCalendar';
 import DocumentLibrary from './DocumentLibrary';
+import DocumentChat from './DocumentChat';
 import { ArrowLeft } from 'lucide-react';
 
 const ProjectDashboard = () => {
@@ -51,14 +52,15 @@ const ProjectDashboard = () => {
     { label: 'List', path: '/tasks' },
     { label: 'Kanban', path: '/kanban' },
     { label: 'Calendar', path: '/calendar' },
-    { label: 'Documents', path: '/documents' }
+    { label: 'Documents', path: '/documents' },
+    { label: 'Document Chat', path: '/chat' }
   ];
 
   const currentPath = location.pathname.replace(`/projects/${projectId}`, '') || '';
 
   return (
-    <div>
-      <button className="btn btn-ghost mb-4" onClick={() => navigate(`/workspaces/${project.workspace_id}/projects`)}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+      <button className="btn btn-ghost mb-3" onClick={() => navigate(`/workspaces/${project.workspace_id}/projects`)}>
         <ArrowLeft size={16} /> Back to Projects
       </button>
       
@@ -69,7 +71,7 @@ const ProjectDashboard = () => {
         </div>
       </div>
 
-      <div className="flex gap-2 border-b border-subtle mb-6 pt-4">
+      <div className="flex gap-2 border-b border-subtle mb-4 pt-3">
         {tabs.map(t => (
           <button 
             key={t.label}
@@ -86,14 +88,18 @@ const ProjectDashboard = () => {
         ))}
       </div>
 
-      <Routes>
-        <Route path="/" element={<ProjectOverview project={project} />} />
-        <Route path="/tasks" element={<TaskList project={project} />} />
-        <Route path="/kanban" element={<KanbanBoard project={project} />} />
-        <Route path="/calendar" element={<ProjectCalendar project={project} />} />
-        <Route path="/documents" element={<DocumentLibrary project={project} />} />
-        <Route path="*" element={<Navigate to="" replace />} />
-      </Routes>
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <Routes>
+          <Route path="/" element={<ProjectOverview project={project} />} />
+          <Route path="/tasks" element={<TaskList project={project} />} />
+          <Route path="/kanban" element={<KanbanBoard project={project} />} />
+          <Route path="/calendar" element={<ProjectCalendar project={project} />} />
+          <Route path="/documents" element={<DocumentLibrary project={project} />} />
+          <Route path="/chat" element={<DocumentChat project={project} />} />
+          <Route path="/chat/:conversationId" element={<DocumentChat project={project} />} />
+          <Route path="*" element={<Navigate to="" replace />} />
+        </Routes>
+      </div>
     </div>
   );
 };

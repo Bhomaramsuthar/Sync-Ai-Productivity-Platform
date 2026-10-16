@@ -94,23 +94,28 @@ Document Chunking & Embeddings:
 - Idempotent re-indexing, cascade cleanup, and background pipeline integration
 - Indexing status API, chunk inspection, and frontend dual-status / retry UI
 
-### Week 10
-Semantic Search & Document RAG:
-- Vector similarity search (Cosine / L2 distance in pgvector)
-- RAG question answering grounded in document chunks
-- Context retrieval and citation linking
+### Week 10 (Completed)
+Semantic Search & Document Retrieval:
+- Vector similarity search (Cosine distance operator `<=>` in pgvector)
+- Distance threshold calibration (`RAG_MAX_DISTANCE = 0.45`)
+- Passage retrieval, relevance scoring, and source document metadata
 
-### Week 11
-AI Task Generation & Summarization:
-- Task generation and prioritization
-- Meeting and document summarization
-- Action-item extraction
+### Week 11 (Completed)
+Conversational RAG with Source Grounding & Chat History:
+- Persistent conversations and messages schema (`conversations`, `messages` with Alembic migration)
+- Provider-neutral LLM interface (OpenAI, Groq, OpenRouter, Google AI Studio, Mock)
+- Grounded prompt pipeline with untrusted document data defense & injection protection
+- Bounded context construction and multi-turn conversation memory
+- Zero-hallucination relevance thresholding with explicit insufficient-evidence responses
+- Interactive Document Chat frontend UI with source citation inspector drawer
 
-### Week 12
-AI Chat & Tool Calling:
-- Natural language chat assistant
-- Authorized tool calling (get_tasks, create_task, update_task)
-- Conversation history and user confirmation flows
+### Week 12 (Completed)
+AI-Powered Project Productivity & Task Assistance:
+- Project-scoped AI task assistant: title expansion to detailed descriptions & testable acceptance criteria, subtask decomposition proposals, priority suggestions with contextual reasoning, and blocker resolution / next actions
+- Factual project progress summary: live database-grounded metrics (status, completion, overdue, velocity, milestones) distinguished from AI interpretations; zero LLM calls for empty projects
+- Context-aware productivity insights: deterministic rules for overdue tasks, unassigned high-priority work, stagnant tasks, and approaching deadlines with direct task navigation links
+- Safe UI workflows: non-intrusive modal review with inline editing, selection checkboxes, and batch creation before saving; zero automatic persistence or updates without explicit user confirmation
+- Strict security & reliability: workspace authorization on all endpoints, cross-project data isolation, typed Pydantic validation, bounded prompt context, sanitized provider errors (503/504/429), and MockLLMProvider for deterministic automated testing
 
 ---
 

@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { type Project } from '../services/projectService';
 import { taskService, type Task } from '../services/taskService';
 import { memberService, type Member } from '../services/workspaceService';
-import { Plus, Search, Edit2, Trash2, Eye } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Eye, Sparkles, ListTree } from 'lucide-react';
 import { TaskDetailModal } from '../components/TaskDetailModal';
+import { AITaskAssistantModal } from '../components/AITaskAssistantModal';
+import { productivityService } from '../services/productivityService';
 
 const TaskList = ({ project }: { project: Project }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -17,13 +19,21 @@ const TaskList = ({ project }: { project: Project }) => {
 
   // Detail Modal state
   const [detailTask, setDetailTask] = useState<Task | null>(null);
+
+  // AI Assistant state
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [aiAssistantInitialTitle, setAiAssistantInitialTitle] = useState('');
+  const [aiAssistantInitialDesc, setAiAssistantInitialDesc] = useState('');
+  const [expandingDescription, setExpandingDescription] = useState(false);
+  const [suggestingPriority, setSuggestingPriority] = useState(false);
+  const [aiNotice, setAiNotice] = useState<string | null>(null);
   
   // Filters
   const [filterStatus, setFilterStatus] = useState('');
   const [filterPriority, setFilterPriority] = useState('');
   const [search, setSearch] = useState('');
 
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async () => {
     try {
       const res = await taskService.list(project.id, {
         status: filterStatus || undefined,
@@ -34,7 +44,7 @@ const TaskList = ({ project }: { project: Project }) => {
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [project.id, filterStatus, filterPriority, search]);
 
   useEffect(() => {
     memberService.list(project.workspace_id).then(res => setMembers(res.data)).catch(console.error);
@@ -42,12 +52,68 @@ const TaskList = ({ project }: { project: Project }) => {
 
   useEffect(() => {
     loadTasks().finally(() => setLoading(false));
-  }, [project.id, filterStatus, filterPriority, search]);
+  }, [loadTasks]);
+
+  const handleAutoDraftDescription = async () => {
+    if (!formData.title.trim()) {
+      alert('Please enter a task title first so AI can draft the description.');
+      return;
+    }
+    setExpandingDescription(true);
+    setAiNotice(null);
+    try {
+      const res = await productivityService.expandTask(project.id, {
+        title: formData.title.trim(),
+        context: formData.description.trim() || undefined,
+      });
+      const data = res.data;
+      let text = data.description;
+      if (data.acceptance_criteria && data.acceptance_criteria.length > 0) {
+        text += '\n\nAcceptance Criteria:\n' + data.acceptance_criteria.map(c => `- [ ] ${c}`).join('\n');
+      }
+      setFormData(prev => ({
+        ...prev,
+        description: text,
+        priority: data.suggested_priority || prev.priority,
+      }));
+      setAiNotice('✨ AI drafted description & acceptance criteria! You can review or edit before saving.');
+    } catch (err: any) {
+      if (err.response?.status === 503) {
+        alert('AI Provider is not configured in backend/.env. Please configure LLM_API_KEY or GROQ_API_KEY.');
+      } else {
+        alert(err.response?.data?.detail?.error?.message || 'Failed to auto-draft description.');
+      }
+    } finally {
+      setExpandingDescription(false);
+    }
+  };
+
+  const handleSuggestPriority = async () => {
+    if (!formData.title.trim()) {
+      alert('Please enter a task title first.');
+      return;
+    }
+    setSuggestingPriority(true);
+    try {
+      const res = await productivityService.suggestPriority(project.id, {
+        title: formData.title.trim(),
+        description: formData.description.trim() || undefined,
+        due_date: formData.due_date || undefined,
+      });
+      setFormData(prev => ({ ...prev, priority: res.data.suggested_priority }));
+      setAiNotice(`🎯 Priority set to ${res.data.suggested_priority}: ${res.data.reasoning}`);
+    } catch (err: any) {
+      alert(err.response?.data?.detail?.error?.message || 'Failed to suggest priority.');
+    } finally {
+      setSuggestingPriority(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const data = { 
+
         ...formData, 
         assignee_id: formData.assignee_id || null,
         due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null
@@ -135,25 +201,109 @@ const TaskList = ({ project }: { project: Project }) => {
             <option value="URGENT">Urgent</option>
           </select>
         </div>
-        <button className="btn btn-primary whitespace-nowrap" onClick={openCreate}>
-          <Plus size={16} /> New Task
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            className="btn btn-secondary whitespace-nowrap"
+            onClick={() => {
+              setAiAssistantInitialTitle('');
+              setAiAssistantInitialDesc('');
+              setShowAIAssistant(true);
+            }}
+            title="Break down tasks or get unblocking guidance"
+          >
+            <Sparkles size={16} className="text-accent-primary" /> AI Assistant
+          </button>
+          <button className="btn btn-primary whitespace-nowrap" onClick={openCreate}>
+            <Plus size={16} /> New Task
+          </button>
+        </div>
       </div>
 
       {showForm && (
         <div className="card mb-6">
-          <div className="card-header bg-surface-hover">
+          <div className="card-header bg-surface-hover flex items-center justify-between">
             <h3 className="card-title">{editTask ? 'Edit Task' : 'Create Task'}</h3>
+            <button
+              type="button"
+              className="btn btn-ghost text-xs py-1 px-2 text-accent-primary hover:bg-accent-primary-alpha"
+              onClick={() => {
+                setAiAssistantInitialTitle(formData.title);
+                setAiAssistantInitialDesc(formData.description);
+                setShowAIAssistant(true);
+              }}
+              title="Open full AI assistant"
+            >
+              <Sparkles size={13} className="mr-1" /> AI Assistant Tools
+            </button>
           </div>
           <div className="card-body">
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="form-group">
                 <label className="form-label">Title</label>
-                <input className="form-input" required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
+                <input
+                  className="form-input"
+                  required
+                  placeholder="e.g., Build PostgreSQL user authentication"
+                  value={formData.title}
+                  onChange={e => setFormData({...formData, title: e.target.value})}
+                />
               </div>
+
               <div className="form-group">
-                <label className="form-label">Description</label>
-                <textarea className="form-input" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} rows={3} style={{ resize: 'vertical' }} />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="form-label mb-0">Description</label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="btn btn-ghost text-xs py-0.5 px-2 text-accent-primary hover:bg-accent-primary-alpha"
+                      onClick={handleAutoDraftDescription}
+                      disabled={expandingDescription || !formData.title.trim()}
+                      title="Generate structured description and acceptance criteria from title"
+                    >
+                      {expandingDescription ? (
+                        <>
+                          <div className="spinner mr-1" style={{ width: 11, height: 11 }}></div> Drafting...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles size={12} className="mr-1" /> Auto-Draft Description & Criteria
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-ghost text-xs py-0.5 px-2 text-muted hover:text-primary"
+                      onClick={() => {
+                        setAiAssistantInitialTitle(formData.title);
+                        setAiAssistantInitialDesc(formData.description);
+                        setShowAIAssistant(true);
+                      }}
+                      title="Decompose task into smaller subtasks"
+                    >
+                      <ListTree size={12} className="mr-1" /> Break Down Subtasks
+                    </button>
+                  </div>
+                </div>
+                <textarea
+                  className="form-input"
+                  value={formData.description}
+                  onChange={e => setFormData({...formData, description: e.target.value})}
+                  rows={4}
+                  placeholder="Add details, context, or click 'Auto-Draft' above..."
+                  style={{ resize: 'vertical' }}
+                />
+                {aiNotice && (
+                  <div className="p-2 rounded bg-surface border border-accent-primary-alpha text-xs text-primary mt-1.5 flex items-center justify-between">
+                    <span>{aiNotice}</span>
+                    <button
+                      type="button"
+                      className="text-muted hover:text-primary ml-2 font-bold"
+                      onClick={() => setAiNotice(null)}
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
               </div>
               
               <div className="flex flex-col sm:flex-row gap-4">
@@ -167,7 +317,18 @@ const TaskList = ({ project }: { project: Project }) => {
                   </select>
                 </div>
                 <div className="form-group flex-1">
-                  <label className="form-label">Priority</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="form-label mb-0">Priority</label>
+                    <button
+                      type="button"
+                      className="btn btn-ghost text-xs py-0 px-1 text-accent-primary hover:underline"
+                      onClick={handleSuggestPriority}
+                      disabled={suggestingPriority || !formData.title.trim()}
+                      title="Ask AI to recommend priority"
+                    >
+                      {suggestingPriority ? 'Evaluating...' : '✨ Suggest'}
+                    </button>
+                  </div>
                   <select className="form-select" value={formData.priority} onChange={e => setFormData({...formData, priority: e.target.value})}>
                     <option value="LOW">LOW</option>
                     <option value="MEDIUM">MEDIUM</option>
@@ -301,6 +462,24 @@ const TaskList = ({ project }: { project: Project }) => {
         members={members} 
         onEdit={openEdit}
         onStatusChange={handleStatusChange}
+        onOpenAIAssistant={(t) => {
+          setAiAssistantInitialTitle(t.title);
+          setAiAssistantInitialDesc(t.description || '');
+          setShowAIAssistant(true);
+        }}
+      />
+
+      {/* AI Task Assistant Modal (Breakdown / Unblock / Priority) */}
+      <AITaskAssistantModal
+        projectId={project.id}
+        initialTitle={aiAssistantInitialTitle}
+        initialDescription={aiAssistantInitialDesc}
+        isOpen={showAIAssistant}
+        onClose={() => setShowAIAssistant(false)}
+        onTasksCreated={() => loadTasks()}
+        onApplyPriority={(prio) => {
+          setFormData(prev => ({ ...prev, priority: prio }));
+        }}
       />
     </div>
   );

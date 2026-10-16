@@ -151,20 +151,21 @@ No Redis schema.
 - createdAt
 
 ## Conversation
-- id (UUID)
-- userId (UUID)
-- workspaceId (UUID)
-- projectId (UUID)
-- title
-- createdAt
-- updatedAt
+- id (UUID, PK)
+- userId (UUID, FK -> users.id ON DELETE CASCADE)
+- workspaceId (UUID, FK -> workspaces.id ON DELETE CASCADE)
+- projectId (UUID, FK -> projects.id ON DELETE CASCADE)
+- title (VARCHAR(255))
+- createdAt (timestamp with timezone)
+- updatedAt (timestamp with timezone)
 
 ## Message
-- id (UUID)
-- conversationId (UUID)
-- senderRole (USER, AI)
-- content
-- createdAt
+- id (UUID, PK)
+- conversationId (UUID, FK -> conversations.id ON DELETE CASCADE)
+- senderRole (VARCHAR(20), USER or ASSISTANT)
+- content (TEXT)
+- citationsJson (TEXT, JSON array of structured CitationItem source metadata)
+- createdAt (timestamp with timezone)
 
 ---
 

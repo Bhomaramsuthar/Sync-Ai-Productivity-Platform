@@ -3,12 +3,15 @@ import { type Project } from '../services/projectService';
 import { taskService, type Task } from '../services/taskService';
 import { memberService, type Member } from '../services/workspaceService';
 import { TaskDetailModal } from '../components/TaskDetailModal';
+import { AITaskAssistantModal } from '../components/AITaskAssistantModal';
 
 const KanbanBoard = ({ project }: { project: Project }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [aiTask, setAiTask] = useState<Task | null>(null);
 
   const loadTasks = async () => {
     try {
@@ -117,6 +120,25 @@ const KanbanBoard = ({ project }: { project: Project }) => {
         onClose={() => setSelectedTask(null)}
         members={members}
         onStatusChange={handleStatusChange}
+        onOpenAIAssistant={(t) => {
+          setAiTask(t);
+          setShowAIAssistant(true);
+        }}
+      />
+
+      {/* AI Task Assistant Modal */}
+      <AITaskAssistantModal
+        projectId={project.id}
+        initialTitle={aiTask?.title || ''}
+        initialDescription={aiTask?.description || ''}
+        initialDueDate={aiTask?.due_date}
+        taskId={aiTask?.id}
+        isOpen={showAIAssistant}
+        onClose={() => {
+          setShowAIAssistant(false);
+          setAiTask(null);
+        }}
+        onTasksCreated={() => loadTasks()}
       />
     </div>
   );
