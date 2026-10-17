@@ -11,6 +11,27 @@ class Settings(BaseSettings):
     SUPABASE_KEY: str = ""
     MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024 # 10MB default
     
+    # Production, Security & CORS
+    ENVIRONMENT: str = "development"
+    LOG_LEVEL: str = "INFO"
+    CORS_ORIGINS: str = ""
+
+    @property
+    def allowed_cors_origins(self) -> list[str]:
+        default_origins = [
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+        ]
+        if self.CORS_ORIGINS:
+            custom = [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
+            for c in custom:
+                if c not in default_origins:
+                    default_origins.append(c)
+        return default_origins
+
+    
     # RAG: Chunking & Embeddings
     CHUNK_SIZE: int = 1000
     CHUNK_OVERLAP: int = 150
