@@ -24,6 +24,18 @@ def normalize_database_url(url: str | None) -> str:
     return trimmed
 
 
+def sanitize_cors_origin(origin: str | None) -> str:
+    """Sanitize a CORS origin string.
+
+    Trims leading/trailing whitespace, strips surrounding single and double quotes,
+    and strips trailing slashes so origins strictly match browser Origin headers.
+    """
+    if not origin:
+        return ""
+    cleaned = origin.strip().strip("\"'").strip()
+    return cleaned.rstrip("/")
+
+
 class Settings(BaseSettings):
     DATABASE_URL: str = ""
 
@@ -52,12 +64,14 @@ class Settings(BaseSettings):
             "http://127.0.0.1:5173",
             "http://localhost:3000",
             "http://127.0.0.1:3000",
+            "https://sync-ai-productivity-platform.vercel.app",
         ]
         if self.CORS_ORIGINS:
-            custom = [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
-            for c in custom:
-                if c not in default_origins:
-                    default_origins.append(c)
+            raw_origins = self.CORS_ORIGINS.split(",")
+            for raw in raw_origins:
+                cleaned = sanitize_cors_origin(raw)
+                if cleaned and cleaned not in default_origins:
+                    default_origins.append(cleaned)
         return default_origins
 
     
