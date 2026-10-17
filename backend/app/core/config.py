@@ -1,8 +1,37 @@
 import os
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def normalize_database_url(url: str | None) -> str:
+    """Normalize database connection URLs to use the psycopg 3 driver for PostgreSQL.
+
+    Converts:
+      - postgres:// -> postgresql+psycopg://
+      - postgresql:// -> postgresql+psycopg://
+      - postgresql+psycopg2:// -> postgresql+psycopg://
+    Preserves sqlite, mock, or other drivers and all credentials/query parameters intact.
+    """
+    if not url:
+        return ""
+    trimmed = url.strip()
+    if trimmed.startswith("postgresql+psycopg2://"):
+        return "postgresql+psycopg://" + trimmed[len("postgresql+psycopg2://"):]
+    if trimmed.startswith("postgres://"):
+        return "postgresql+psycopg://" + trimmed[len("postgres://"):]
+    if trimmed.startswith("postgresql://"):
+        return "postgresql+psycopg://" + trimmed[len("postgresql://"):]
+    return trimmed
+
 
 class Settings(BaseSettings):
     DATABASE_URL: str = ""
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def validate_database_url(cls, v: str | None) -> str:
+        return normalize_database_url(v)
+
     JWT_SECRET: str = "secret"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 1440

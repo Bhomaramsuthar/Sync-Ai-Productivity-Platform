@@ -18,7 +18,7 @@ import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from app.core.config import settings
+from app.core.config import settings, normalize_database_url
 from app.core.database import Base
 from app.users import models  # register models
 from app.workspaces import models as workspace_models  # register workspace models
@@ -28,7 +28,10 @@ from app.documents import models as document_models
 from app.rag import models as rag_models
 from app.ai import models as ai_models
 
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+# Normalize database URL to ensure Psycopg 3 (postgresql+psycopg://) is consistently used
+target_db_url = normalize_database_url(settings.DATABASE_URL or config.get_main_option("sqlalchemy.url") or "")
+if target_db_url:
+    config.set_main_option("sqlalchemy.url", target_db_url)
 
 target_metadata = Base.metadata
 
@@ -50,7 +53,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = normalize_database_url(config.get_main_option("sqlalchemy.url") or target_db_url)
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -69,8 +72,14 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    section = config.get_section(config.config_ini_section, {})
+    if target_db_url:
+        section["sqlalchemy.url"] = target_db_url
+    elif "sqlalchemy.url" in section:
+        section["sqlalchemy.url"] = normalize_database_url(section["sqlalchemy.url"])
+
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        section,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
