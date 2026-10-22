@@ -27,6 +27,8 @@ from app.tasks import models as task_models
 from app.documents import models as document_models
 from app.rag import models as rag_models
 from app.ai import models as ai_models
+from app.calendar import models as calendar_models
+from app.meetings import models as meeting_models
 
 # Normalize database URL to ensure Psycopg 3 (postgresql+psycopg://) is consistently used
 target_db_url = normalize_database_url(settings.DATABASE_URL or config.get_main_option("sqlalchemy.url") or "")

@@ -26,6 +26,7 @@ import {
   type CitationItem,
 } from '../services/chatService';
 import type { Project } from '../services/projectService';
+import { ThinkingLoader } from '../components/ThinkingLoader';
 
 interface DocumentChatProps {
   project: Project;
@@ -968,8 +969,12 @@ export const DocumentChat: React.FC<DocumentChatProps> = ({ project }) => {
                   gap: '8px',
                 }}
               >
-                <RefreshCw size={14} className="spin-animation" style={{ animation: 'spin 1.5s linear infinite' }} />
-                <span>Searching documents & generating grounded response...</span>
+                <ThinkingLoader
+                  state="solving"
+                  size={20}
+                  inline
+                  message="Searching documents & generating grounded response..."
+                />
               </div>
             </div>
           )}

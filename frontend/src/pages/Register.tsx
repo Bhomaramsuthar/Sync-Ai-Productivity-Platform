@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { Sparkles } from 'lucide-react';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -40,13 +41,20 @@ const Register = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h1 className="auth-title">Create Account</h1>
-        <p className="auth-subtitle">Join the AI Productivity Platform</p>
+        <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#ffffff', boxShadow: '0 4px 16px rgba(99, 102, 241, 0.4)' }}>
+            <Sparkles size={22} />
+          </div>
+          <div>
+            <h1 className="auth-title" style={{ margin: 0 }}>Create Account</h1>
+            <p className="auth-subtitle" style={{ margin: 0 }}>Join Sync AI Productivity Platform</p>
+          </div>
+        </div>
         
         {error && <div className="error-message">{error}</div>}
         
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className="form-group" style={{ margin: 0 }}>
             <label className="form-label" htmlFor="name">Full Name</label>
             <input 
               className="form-input"
@@ -55,12 +63,12 @@ const Register = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required 
-              placeholder="John Doe"
+              placeholder="Alice Johnson"
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="email">Email</label>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label className="form-label" htmlFor="email">Work Email</label>
             <input 
               className="form-input"
               id="email"
@@ -68,11 +76,11 @@ const Register = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required 
-              placeholder="name@example.com"
+              placeholder="alice@company.com"
             />
           </div>
           
-          <div className="form-group">
+          <div className="form-group" style={{ margin: 0 }}>
             <label className="form-label" htmlFor="password">Password</label>
             <input 
               className="form-input"
@@ -85,7 +93,7 @@ const Register = () => {
             />
           </div>
 
-          <div className="form-group">
+          <div className="form-group" style={{ margin: 0 }}>
             <label className="form-label" htmlFor="confirmPassword">Confirm Password</label>
             <input 
               className="form-input"
@@ -98,13 +106,13 @@ const Register = () => {
             />
           </div>
           
-          <button type="submit" className="btn-primary" disabled={isLoading}>
-            {isLoading ? 'Creating account...' : 'Sign Up'}
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '6px', padding: '0.75rem' }} disabled={isLoading}>
+            {isLoading ? 'Creating account...' : 'Create Account'}
           </button>
         </form>
         
         <div className="auth-links">
-          Already have an account? <Link to="/login">Sign in</Link>
+          Already have an account? <Link to="/login" style={{ fontWeight: 600 }}>Sign in</Link>
         </div>
       </div>
     </div>

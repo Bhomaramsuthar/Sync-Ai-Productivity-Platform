@@ -96,6 +96,18 @@ class Settings(BaseSettings):
     LLM_MAX_TOKENS: int = 1000
     LLM_TIMEOUT_SECONDS: float = 30.0
 
+    # Meetings & Media Providers
+    LIVEKIT_URL: str = ""
+    LIVEKIT_API_KEY: str = ""
+    LIVEKIT_API_SECRET: str = ""
+    GROQ_WHISPER_MODEL: str = "whisper-large-v3-turbo"
+    TRANSCRIPTION_BATCH_DURATION_SECONDS: int = 30
+    TRANSCRIPTION_MAX_RETRIES: int = 3
+    TRANSCRIPTION_INITIAL_BACKOFF_SECONDS: float = 2.0
+    TRANSCRIPTION_MAX_BACKOFF_SECONDS: float = 30.0
+    TRANSCRIPTION_QUEUE_MAX_SIZE: int = 100
+    TRANSCRIPTION_CONCURRENCY: int = 2
+
     @property
     def effective_llm_api_key(self) -> str:
         if self.LLM_PROVIDER.lower() in ("groq", "groq-cloud"):

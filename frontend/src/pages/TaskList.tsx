@@ -174,26 +174,26 @@ const TaskList = ({ project }: { project: Project }) => {
 
   return (
     <div>
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.65rem', flex: 1, minWidth: '280px' }}>
+          <div style={{ position: 'relative', minWidth: '240px', flex: '1 1 240px' }}>
+            <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
             <input 
               className="form-input" 
-              style={{ paddingLeft: '2.5rem' }}
+              style={{ paddingLeft: '2.25rem' }}
               placeholder="Search tasks..." 
               value={search} 
               onChange={e => setSearch(e.target.value)} 
             />
           </div>
-          <select className="form-select w-36" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+          <select className="form-select" style={{ width: 'auto', minWidth: '130px' }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
             <option value="">All Statuses</option>
-            <option value="TODO">TODO</option>
+            <option value="TODO">To Do</option>
             <option value="IN_PROGRESS">In Progress</option>
             <option value="IN_REVIEW">In Review</option>
             <option value="DONE">Done</option>
           </select>
-          <select className="form-select w-36" value={filterPriority} onChange={e => setFilterPriority(e.target.value)}>
+          <select className="form-select" style={{ width: 'auto', minWidth: '130px' }} value={filterPriority} onChange={e => setFilterPriority(e.target.value)}>
             <option value="">All Priorities</option>
             <option value="LOW">Low</option>
             <option value="MEDIUM">Medium</option>
@@ -201,9 +201,9 @@ const TaskList = ({ project }: { project: Project }) => {
             <option value="URGENT">Urgent</option>
           </select>
         </div>
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           <button
-            className="btn btn-secondary whitespace-nowrap"
+            className="btn btn-secondary"
             onClick={() => {
               setAiAssistantInitialTitle('');
               setAiAssistantInitialDesc('');
@@ -211,10 +211,10 @@ const TaskList = ({ project }: { project: Project }) => {
             }}
             title="Break down tasks or get unblocking guidance"
           >
-            <Sparkles size={16} className="text-accent-primary" /> AI Assistant
+            <Sparkles size={15} style={{ color: 'var(--accent-primary)' }} /> AI Assistant
           </button>
-          <button className="btn btn-primary whitespace-nowrap" onClick={openCreate}>
-            <Plus size={16} /> New Task
+          <button className="btn btn-primary" onClick={openCreate}>
+            <Plus size={15} /> New Task
           </button>
         </div>
       </div>
@@ -361,14 +361,14 @@ const TaskList = ({ project }: { project: Project }) => {
       )}
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-12 text-muted gap-4">
+        <div className="empty-tab-panel" style={{ minHeight: '40vh', border: 'none', background: 'transparent' }}>
           <div className="spinner"></div>
-          <p>Loading tasks...</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Loading tasks...</p>
         </div>
       ) : tasks.length === 0 ? (
-        <div className="empty-state">
-          <h3 className="empty-state-title">No tasks found</h3>
-          <p className="text-muted">Adjust your filters or create a new task.</p>
+        <div className="empty-tab-panel" style={{ minHeight: '35vh' }}>
+          <h3 className="empty-tab-title">No tasks found</h3>
+          <p className="empty-tab-subtitle">Adjust your search/filters or click "+ New Task" to create one.</p>
         </div>
       ) : (
         <div className="table-container">

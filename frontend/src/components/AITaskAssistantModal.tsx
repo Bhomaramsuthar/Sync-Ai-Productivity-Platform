@@ -15,6 +15,7 @@ import {
   Flag,
   Plus,
 } from 'lucide-react';
+import { ThinkingLoader } from './ThinkingLoader';
 
 interface Props {
   projectId: string;
@@ -294,9 +295,7 @@ export const AITaskAssistantModal: React.FC<Props> = ({
                     disabled={loading || !title.trim()}
                   >
                     {loading ? (
-                      <>
-                        <div className="spinner mr-1.5" style={{ width: 12, height: 12 }}></div> Generating Subtasks...
-                      </>
+                      <ThinkingLoader state="solving" size={20} inline message="Generating Subtasks..." />
                     ) : (
                       <>
                         <Sparkles size={14} className="mr-1.5" /> Generate Proposed Subtasks
@@ -406,9 +405,7 @@ export const AITaskAssistantModal: React.FC<Props> = ({
                 disabled={loading || !blocker.trim()}
               >
                 {loading ? (
-                  <>
-                    <div className="spinner mr-1.5" style={{ width: 12, height: 12 }}></div> Analyzing Blocker...
-                  </>
+                  <ThinkingLoader state="solving" size={20} inline message="Analyzing Blocker..." />
                 ) : (
                   <>
                     <Sparkles size={14} className="mr-1.5" /> Suggest Next Action & Unblock
@@ -458,9 +455,7 @@ export const AITaskAssistantModal: React.FC<Props> = ({
                 disabled={loading || !title.trim()}
               >
                 {loading ? (
-                  <>
-                    <div className="spinner mr-1.5" style={{ width: 12, height: 12 }}></div> Evaluating Priority...
-                  </>
+                  <ThinkingLoader state="solving" size={20} inline message="Evaluating Priority..." />
                 ) : (
                   <>
                     <Sparkles size={14} className="mr-1.5" /> Analyze & Suggest Priority

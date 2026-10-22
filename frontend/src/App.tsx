@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { BreadcrumbProvider } from './context/BreadcrumbContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -9,13 +10,17 @@ import WorkspaceDetail from './pages/WorkspaceDetail';
 import ProjectsList from './pages/ProjectsList';
 import CreateProject from './pages/CreateProject';
 import ProjectDashboard from './pages/ProjectDashboard';
+import { MeetingsDashboard } from './pages/MeetingsDashboard';
+import { MeetingDetail } from './pages/MeetingDetail';
+import { MeetingRoom } from './pages/MeetingRoom';
 import './index.css';
 
 function App() {
   return (
     <Router>
       <AuthProvider>
-        <Routes>
+        <BreadcrumbProvider>
+          <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           
@@ -24,9 +29,12 @@ function App() {
             <Route path="/workspaces" element={<Workspaces />} />
             <Route path="/workspaces/new" element={<CreateWorkspace />} />
             <Route path="/workspaces/:workspaceId" element={<WorkspaceDetail />} />
+            <Route path="/workspaces/:workspaceId/meetings" element={<MeetingsDashboard />} />
             <Route path="/workspaces/:workspaceId/projects" element={<ProjectsList />} />
             <Route path="/workspaces/:workspaceId/projects/new" element={<CreateProject />} />
             <Route path="/projects/:projectId/*" element={<ProjectDashboard />} />
+            <Route path="/meetings/:meetingId" element={<MeetingDetail />} />
+            <Route path="/meetings/:meetingId/room" element={<MeetingRoom />} />
             
             {/* Catch all for authenticated users */}
             <Route path="*" element={<Navigate to="/workspaces" replace />} />
@@ -35,6 +43,7 @@ function App() {
           {/* Catch all for unauthenticated users */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
+        </BreadcrumbProvider>
       </AuthProvider>
     </Router>
   );

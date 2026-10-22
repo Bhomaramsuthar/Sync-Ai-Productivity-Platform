@@ -17,6 +17,7 @@ import {
   Info,
 } from 'lucide-react';
 import './ProjectAISummary.css';
+import { ThinkingLoader } from './ThinkingLoader';
 
 interface Props {
   projectId: string;
@@ -129,9 +130,7 @@ export const ProjectAISummary: React.FC<Props> = ({ projectId, onNavigateToTasks
           disabled={loadingSummary}
         >
           {loadingSummary ? (
-            <>
-              <div className="spinner" style={{ width: 13, height: 13 }}></div> Generating Summary...
-            </>
+            <ThinkingLoader state="composing" size={20} inline message="Generating Summary..." />
           ) : (
             <>
               <RefreshCw size={13} /> {summary ? 'Refresh Summary' : 'Generate AI Summary'}
@@ -163,8 +162,8 @@ export const ProjectAISummary: React.FC<Props> = ({ projectId, onNavigateToTasks
 
       {/* Live Factual Metrics Strip */}
       {loadingInsights && !metrics ? (
-        <div className="flex items-center justify-center py-6 text-xs text-muted gap-2">
-          <div className="spinner" style={{ width: 14, height: 14 }}></div> Loading project metrics...
+        <div className="flex items-center justify-center py-6">
+          <ThinkingLoader state="working" size={20} inline message="Loading project metrics..." />
         </div>
       ) : metrics ? (
         <div>

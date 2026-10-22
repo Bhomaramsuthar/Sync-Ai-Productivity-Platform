@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { type Project } from '../services/projectService';
 import { taskService, type Task } from '../services/taskService';
+import { calendarService, type CalendarEvent } from '../services/calendarService';
 import { memberService, type Member } from '../services/workspaceService';
 import { TaskDetailModal } from '../components/TaskDetailModal';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { ThinkingLoader } from '../components/ThinkingLoader';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock } from 'lucide-react';
 import './ProjectCalendar.css';
 
 interface Props {
@@ -12,24 +14,27 @@ interface Props {
 
 export const ProjectCalendar: React.FC<Props> = ({ project }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   useEffect(() => {
-    memberService.list(project.workspace_id).then(res => setMembers(res.data)).catch(console.error);
-    taskService.list(project.id)
-      .then(res => setTasks(res.data))
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    Promise.all([
+      memberService.list(project.workspace_id).then(res => setMembers(res.data)).catch(console.error),
+      taskService.list(project.id).then(res => setTasks(res.data)).catch(console.error),
+      calendarService.list(project.workspace_id, { project_id: project.id }).then(res => setEvents(res.data)).catch(console.error),
+    ]).finally(() => setLoading(false));
   }, [project.id, project.workspace_id]);
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center py-12 gap-4 text-muted">
-      <div className="spinner"></div>
-      <p>Loading calendar...</p>
-    </div>
+    <ThinkingLoader
+      state="searching"
+      size={64}
+      message="Loading project calendar & schedules..."
+      description="Gathering task deadlines, milestones, and scheduled meetings"
+    />
   );
 
   const getDaysInMonth = (year: number, month: number) => {
@@ -73,6 +78,14 @@ export const ProjectCalendar: React.FC<Props> = ({ project }) => {
     });
   };
 
+  const eventsByDay = (day: number) => {
+    return events.filter(event => {
+      if (!event.start_time) return false;
+      const d = new Date(event.start_time);
+      return d.getUTCDate() === day && d.getUTCMonth() === month && d.getUTCFullYear() === year;
+    });
+  };
+
   const renderCells = () => {
     const cells = [];
     for (let i = 0; i < firstDay; i++) {
@@ -80,10 +93,28 @@ export const ProjectCalendar: React.FC<Props> = ({ project }) => {
     }
     for (let i = 1; i <= daysInMonth; i++) {
       const dayTasks = tasksByDay(i);
+      const dayEvents = eventsByDay(i);
       cells.push(
         <div key={i} className={`calendar-cell ${isToday(i) ? 'today' : ''}`}>
           <div className="cell-header">{i}</div>
           <div className="cell-tasks">
+            {dayEvents.map(event => (
+              <div
+                key={event.id}
+                className="calendar-task"
+                style={{
+                  backgroundColor: 'rgba(99, 102, 241, 0.25)',
+                  borderLeft: '3px solid #6366f1',
+                  color: '#e0e7ff',
+                }}
+                title={`Event: ${event.title}\n${event.description || ''}`}
+              >
+                <div className="task-title" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Clock size={11} style={{ flexShrink: 0 }} />
+                  <span>{event.title}</span>
+                </div>
+              </div>
+            ))}
             {dayTasks.map(task => (
               <div 
                 key={task.id} 

@@ -1,0 +1,565 @@
+/* ==========================================================================
+   Document Library & Semantic Search Styles - Modern SaaS Theme
+   Cohesive with Platform Dark Charcoal Theme (#0e0e11 / #18181b / #6366f1)
+   ========================================================================== */
+
+.doc-library-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+/* Secondary Filter Bar for Documents Tab */
+.doc-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(24, 24, 27, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+.doc-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.doc-type-pills {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(14, 14, 18, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.doc-type-pill {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 7px;
+  background: transparent;
+  color: #a1a1aa;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.doc-type-pill:hover {
+  color: #ffffff;
+}
+
+.doc-type-pill.active {
+  background: #6366f1;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.35);
+}
+
+.doc-view-toggle {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(14, 14, 18, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.doc-view-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: #71717a;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.doc-view-btn:hover {
+  color: #ffffff;
+}
+
+.doc-view-btn.active {
+  background: #27272a;
+  color: #ffffff;
+}
+
+/* Table View for Documents */
+.doc-table-container {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(20, 20, 24, 0.7);
+}
+
+.doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.8125rem;
+}
+
+.doc-table th {
+  padding: 0.75rem 1rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #a1a1aa;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(14, 14, 18, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+.doc-table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  vertical-align: middle;
+}
+
+.doc-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.doc-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* ==========================================================================
+   AI Semantic Search Interface
+   ========================================================================== */
+.semantic-search-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.semantic-search-hero-card {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(24, 24, 28, 0.95) 50%, rgba(18, 18, 22, 0.98) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 16px;
+  padding: 1.5rem 1.75rem;
+  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.semantic-hero-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.semantic-hero-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.semantic-hero-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(99, 102, 241, 0.18);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #818cf8;
+  flex-shrink: 0;
+}
+
+.semantic-hero-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 0.25rem 0;
+  letter-spacing: -0.01em;
+}
+
+.semantic-hero-desc {
+  font-size: 0.8rem;
+  color: #a1a1aa;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Search Bar in Hero */
+.semantic-search-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(14, 14, 18, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 5px 6px 5px 14px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.semantic-search-box:focus-within {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+
+.semantic-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 0.9rem;
+  padding: 8px 0;
+  min-width: 0;
+}
+
+.semantic-search-input:focus {
+  outline: none;
+}
+
+.semantic-search-input::placeholder {
+  color: #71717a;
+}
+
+.semantic-btn-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.65rem 1.25rem;
+  font-size: 0.825rem;
+  font-weight: 600;
+  border-radius: 9px;
+  background: #6366f1;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.35);
+  white-space: nowrap;
+}
+
+.semantic-btn-submit:hover:not(:disabled) {
+  background: #4f46e5;
+  transform: translateY(-1px);
+}
+
+.semantic-btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.semantic-btn-clear {
+  padding: 6px 12px;
+  font-size: 0.775rem;
+  font-weight: 500;
+  border-radius: 8px;
+  background: transparent;
+  color: #a1a1aa;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.semantic-btn-clear:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+/* Prompt Suggestion Chips */
+.semantic-prompt-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.semantic-prompt-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.semantic-prompt-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.semantic-prompt-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 5px 11px;
+  font-size: 0.775rem;
+  font-weight: 500;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #d4d4d8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.semantic-prompt-chip:hover {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.35);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.semantic-prompt-chip svg {
+  color: #818cf8;
+  flex-shrink: 0;
+}
+
+/* Controls / Settings Row */
+.semantic-settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  flex-wrap: wrap;
+}
+
+.semantic-settings-group {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.semantic-setting-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: #a1a1aa;
+}
+
+/* ==========================================================================
+   Search Result Passage Cards
+   ========================================================================== */
+.search-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.search-result-card {
+  background: linear-gradient(180deg, rgba(24, 24, 28, 0.95) 0%, rgba(18, 18, 22, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.search-result-card:hover {
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+  transform: translateY(-1px);
+}
+
+.search-result-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.search-result-doc-info {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.search-result-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+  font-family: monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  flex-shrink: 0;
+}
+
+.search-result-filename {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-result-chunk-tag {
+  font-size: 0.68rem;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #a1a1aa;
+}
+
+/* Match Confidence Badges */
+.match-score-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 20px;
+}
+
+.match-score-badge.strong {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.match-score-badge.moderate {
+  background: rgba(99, 102, 241, 0.18);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.35);
+}
+
+.match-score-badge.marginal {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+/* Passage Quote Box */
+.search-passage-quote {
+  background: rgba(14, 14, 18, 0.75);
+  border-left: 3px solid #6366f1;
+  border-radius: 0 10px 10px 0;
+  padding: 0.9rem 1.15rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: #e4e4e7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  position: relative;
+}
+
+/* Card Bottom Actions */
+.search-result-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.72rem;
+  color: #71717a;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.search-result-btns {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.btn-passage-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 4px 9px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #d4d4d8;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-passage-action:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   Preview Modal Chunk List & Pre Block
+   ========================================================================== */
+.chunk-item {
+  background: rgba(14, 14, 18, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  transition: all 0.15s ease;
+}
+
+.chunk-item:hover {
+  border-color: rgba(99, 102, 241, 0.25);
+  background: rgba(20, 20, 26, 0.85);
+}
+
+.chunk-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #a1a1aa;
+}
+
+.code-preview-block {
+  background: #0e0e11;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 1.15rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: #d4d4d8;
+  max-height: 55vh;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

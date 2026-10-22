@@ -51,3 +51,11 @@ services:
         value: "1000"
       - key: LLM_TIMEOUT_SECONDS
         value: "30.0"
+      - key: LIVEKIT_URL
+        sync: false
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
+      - key: GROQ_WHISPER_MODEL
+        value: whisper-large-v3-turbo

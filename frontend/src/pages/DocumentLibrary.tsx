@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { type Project } from '../services/projectService';
 import { 
@@ -12,8 +12,18 @@ import { memberService, type Member } from '../services/workspaceService';
 import { 
   Upload, Search, Trash2, Download, FileText, File, 
   CheckCircle2, AlertCircle, AlertTriangle, RotateCw, 
-  Clock, Copy, Check, X, Eye, Layers, Sparkles, Compass, Info, MessageSquare
+  Clock, Copy, Check, X, Eye, Layers, Sparkles, Compass, Info, MessageSquare,
+  LayoutGrid, List, ArrowUpDown, SlidersHorizontal
 } from 'lucide-react';
+import './DocumentLibrary.css';
+import { ThinkingLoader } from '../components/ThinkingLoader';
+
+const SUGGESTED_PROMPTS = [
+  { label: 'System architecture & stack', query: 'What are the system architecture components and technology stack?' },
+  { label: 'Project goals & milestones', query: 'What are the main project goals, milestones, and deliverables?' },
+  { label: 'Security & auth policies', query: 'What are the security, authentication, and access control policies?' },
+  { label: 'Database models & schema', query: 'What are the core database models, tables, and schemas?' },
+];
 
 export const DocumentLibrary = ({ project }: { project: Project }) => {
   const navigate = useNavigate();
@@ -22,9 +32,15 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [search, setSearch] = useState('');
   const [retryingId, setRetryingId] = useState<string | null>(null);
   const [retryingIndexId, setRetryingIndexId] = useState<string | null>(null);
+
+  // Document Filtering & Sorting state
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'ALL' | 'pdf' | 'docx' | 'md' | 'csv' | 'txt'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'READY' | 'PROCESSING' | 'FAILED'>('ALL');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name' | 'size'>('newest');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
   // Semantic Search state
   const [semanticQuery, setSemanticQuery] = useState('');
@@ -35,6 +51,7 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
   const [semanticLoading, setSemanticLoading] = useState(false);
   const [semanticError, setSemanticError] = useState<string | null>(null);
   const [lastSearchedQuery, setLastSearchedQuery] = useState('');
+  const [copiedPassageId, setCopiedPassageId] = useState<string | null>(null);
 
   // Preview Modal state
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
@@ -50,7 +67,7 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
   const loadDocuments = async (showLoadingSpinner = false) => {
     if (showLoadingSpinner) setLoading(true);
     try {
-      const res = await documentService.list(project.id, search || undefined);
+      const res = await documentService.list(project.id);
       setDocuments(res.data);
     } catch (err) {
       console.error('Failed to load documents:', err);
@@ -65,7 +82,7 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
 
   useEffect(() => {
     loadDocuments(true);
-  }, [project.id, search]);
+  }, [project.id]);
 
   // Live polling for in-progress documents (both text extraction & indexing)
   useEffect(() => {
@@ -211,24 +228,87 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
     }
   };
 
-  const handleSemanticSearch = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const queryTrimmed = semanticQuery.trim();
-    if (!queryTrimmed) {
-      setSemanticError("Please enter a question or query.");
+  // Filter and sort documents
+  const filteredAndSortedDocuments = useMemo(() => {
+    return documents
+      .filter((doc) => {
+        // Filename search filter
+        if (search.trim()) {
+          const matchName = doc.filename.toLowerCase().includes(search.toLowerCase().trim());
+          if (!matchName) return false;
+        }
+
+        // File type filter
+        if (typeFilter !== 'ALL') {
+          const ext = doc.filename.split('.').pop()?.toLowerCase();
+          const mime = doc.content_type?.toLowerCase() || '';
+          if (typeFilter === 'pdf' && ext !== 'pdf' && !mime.includes('pdf')) return false;
+          if (typeFilter === 'docx' && ext !== 'docx' && !mime.includes('word')) return false;
+          if (typeFilter === 'md' && ext !== 'md' && !mime.includes('markdown')) return false;
+          if (typeFilter === 'csv' && ext !== 'csv' && !mime.includes('csv')) return false;
+          if (typeFilter === 'txt' && ext !== 'txt' && !mime.includes('plain')) return false;
+        }
+
+        // Status filter
+        if (statusFilter !== 'ALL') {
+          if (statusFilter === 'READY') {
+            if (doc.status !== 'READY') return false;
+          } else if (statusFilter === 'PROCESSING') {
+            if (doc.status !== 'PROCESSING' && doc.status !== 'UPLOADED' && doc.indexing_status !== 'PROCESSING') return false;
+          } else if (statusFilter === 'FAILED') {
+            if (doc.status !== 'FAILED' && doc.indexing_status !== 'FAILED') return false;
+          }
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortBy === 'newest') {
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        }
+        if (sortBy === 'oldest') {
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        }
+        if (sortBy === 'name') {
+          return a.filename.localeCompare(b.filename);
+        }
+        if (sortBy === 'size') {
+          return (b.file_size || 0) - (a.file_size || 0);
+        }
+        return 0;
+      });
+  }, [documents, search, typeFilter, statusFilter, sortBy]);
+
+  // Execute Semantic Search
+  const handleExecuteSemanticSearch = async (
+    queryOverride?: string,
+    sensitivityOverride?: 'balanced' | 'strict' | 'permissive'
+  ) => {
+    const q = (queryOverride !== undefined ? queryOverride : semanticQuery).trim();
+    if (!q) {
+      setSemanticError("Please enter a question or keywords to search document passages.");
       return;
     }
-    if (queryTrimmed.length > 1000) {
+    if (q.length > 1000) {
       setSemanticError("Query exceeds maximum length of 1,000 characters.");
       return;
+    }
+
+    if (queryOverride !== undefined) {
+      setSemanticQuery(queryOverride);
+    }
+
+    const sens = sensitivityOverride || semanticSensitivity;
+    if (sensitivityOverride) {
+      setSemanticSensitivity(sensitivityOverride);
     }
 
     setSemanticLoading(true);
     setSemanticError(null);
     try {
-      const maxDistance = semanticSensitivity === 'strict' ? 0.35 : semanticSensitivity === 'permissive' ? 0.55 : 0.45;
+      const maxDistance = sens === 'strict' ? 0.35 : sens === 'permissive' ? 0.55 : 0.45;
       const res = await documentService.search(project.id, {
-        query: queryTrimmed,
+        query: q,
         limit: semanticLimit,
         max_distance: maxDistance
       });
@@ -236,7 +316,7 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
       if (res.data.threshold !== undefined) {
         setAppliedThreshold(res.data.threshold);
       }
-      setLastSearchedQuery(queryTrimmed);
+      setLastSearchedQuery(q);
     } catch (err: any) {
       const msg = err.response?.data?.detail?.error?.message || "Semantic search request failed.";
       setSemanticError(msg);
@@ -253,31 +333,36 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
     setLastSearchedQuery('');
   };
 
+  const handleCopyPassage = (item: SemanticSearchResultItem) => {
+    navigator.clipboard.writeText(item.content);
+    setCopiedPassageId(item.chunk_id);
+    setTimeout(() => setCopiedPassageId(null), 2000);
+  };
+
   const renderRelevanceBadge = (item: SemanticSearchResultItem) => {
     const tier = item.relevance_tier || (item.distance <= 0.25 ? 'strong' : item.distance <= 0.40 ? 'moderate' : 'marginal');
-    const approxPct = Math.round(item.similarity_score * 100);
-    const tooltip = `Cosine distance: ${item.distance.toFixed(4)} | Approx. vector similarity: ${(item.similarity_score * 100).toFixed(1)}%. Note: Measures semantic vector proximity, not factual accuracy or confidence.`;
+    const approxPct = Math.min(99, Math.max(50, Math.round(item.similarity_score * 100)));
 
     if (tier === 'strong') {
       return (
-        <span className="badge badge-success flex items-center gap-1 text-xs" title={tooltip}>
-          <CheckCircle2 size={11} />
-          Strong Match (~{approxPct}%)
+        <span className="match-score-badge strong" title={`High vector similarity (~${approxPct}%). Matches key concepts closely.`}>
+          <CheckCircle2 size={12} />
+          <span>Strong Match ({approxPct}%)</span>
         </span>
       );
     }
     if (tier === 'moderate') {
       return (
-        <span className="badge badge-primary flex items-center gap-1 text-xs" title={tooltip}>
-          <Sparkles size={11} />
-          Moderate Match (~{approxPct}%)
+        <span className="match-score-badge moderate" title={`Moderate vector similarity (~${approxPct}%). Related context.`}>
+          <Sparkles size={12} />
+          <span>Good Match ({approxPct}%)</span>
         </span>
       );
     }
     return (
-      <span className="badge badge-neutral flex items-center gap-1 text-xs" title={tooltip}>
-        <Info size={11} />
-        Marginal Match (~{approxPct}%)
+      <span className="match-score-badge marginal" title={`Marginal vector similarity (~${approxPct}%). Broad match.`}>
+        <Info size={12} />
+        <span>Related Context ({approxPct}%)</span>
       </span>
     );
   };
@@ -297,46 +382,46 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
 
   const getFileIcon = (contentType: string, filename: string) => {
     const ext = filename.split('.').pop()?.toLowerCase();
-    if (ext === 'pdf' || contentType.includes('pdf')) return <FileText size={22} className="text-primary" />;
-    if (ext === 'docx' || contentType.includes('word')) return <FileText size={22} style={{ color: '#60a5fa' }} />;
-    if (ext === 'csv' || contentType.includes('csv')) return <FileText size={22} style={{ color: '#34d399' }} />;
-    if (ext === 'md' || contentType.includes('markdown')) return <FileText size={22} style={{ color: '#a78bfa' }} />;
-    return <File size={22} className="text-muted" />;
+    if (ext === 'pdf' || contentType.includes('pdf')) return <FileText size={20} style={{ color: '#f87171' }} />;
+    if (ext === 'docx' || contentType.includes('word')) return <FileText size={20} style={{ color: '#60a5fa' }} />;
+    if (ext === 'csv' || contentType.includes('csv')) return <FileText size={20} style={{ color: '#34d399' }} />;
+    if (ext === 'md' || contentType.includes('markdown')) return <FileText size={20} style={{ color: '#a78bfa' }} />;
+    return <File size={20} style={{ color: '#94a3b8' }} />;
   };
 
   const renderExtractionBadge = (doc: Document) => {
     switch (doc.status) {
       case 'READY':
         return (
-          <span className="badge badge-success flex items-center gap-1" title="Text extracted successfully">
-            <CheckCircle2 size={12} />
+          <span className="badge badge-success flex items-center gap-1" style={{ fontSize: '0.68rem', padding: '2px 7px' }} title="Text extracted successfully">
+            <CheckCircle2 size={11} />
             <span>Text Ready</span>
             {doc.extracted_chars ? <span className="opacity-80">({doc.extracted_chars.toLocaleString()} c)</span> : null}
           </span>
         );
       case 'PROCESSING':
         return (
-          <span className="badge badge-warning flex items-center gap-1" title="Extracting text">
-            <RotateCw size={12} className="animate-spin" />
+          <span className="badge badge-warning flex items-center gap-1" style={{ fontSize: '0.68rem', padding: '2px 7px' }} title="Extracting text">
+            <RotateCw size={11} className="animate-spin" />
             <span>Extracting...</span>
           </span>
         );
       case 'UPLOADED':
         return (
-          <span className="badge badge-neutral flex items-center gap-1">
-            <Clock size={12} />
+          <span className="badge badge-neutral flex items-center gap-1" style={{ fontSize: '0.68rem', padding: '2px 7px' }}>
+            <Clock size={11} />
             <span>Queued</span>
           </span>
         );
       case 'FAILED':
         return (
-          <span className="badge badge-danger flex items-center gap-1" title="Extraction failed">
-            <AlertCircle size={12} />
+          <span className="badge badge-danger flex items-center gap-1" style={{ fontSize: '0.68rem', padding: '2px 7px' }} title="Extraction failed">
+            <AlertCircle size={11} />
             <span>Extraction Failed</span>
           </span>
         );
       default:
-        return <span className="badge badge-neutral">{doc.status}</span>;
+        return <span className="badge badge-neutral" style={{ fontSize: '0.68rem', padding: '2px 7px' }}>{doc.status}</span>;
     }
   };
 
@@ -345,348 +430,602 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
     switch (status) {
       case 'READY':
         return (
-          <span className="badge badge-primary flex items-center gap-1" style={{ backgroundColor: 'rgba(99, 102, 241, 0.2)', color: '#818cf8', borderColor: 'rgba(99, 102, 241, 0.4)' }} title="Vectors generated and stored in PostgreSQL">
-            <Sparkles size={12} />
+          <span className="badge badge-primary flex items-center gap-1" style={{ fontSize: '0.68rem', padding: '2px 7px', backgroundColor: 'rgba(99, 102, 241, 0.18)', color: '#a5b4fc', borderColor: 'rgba(99, 102, 241, 0.35)' }} title="Vectors generated and stored in PostgreSQL">
+            <Sparkles size={11} />
             <span>Indexed ({doc.chunk_count || 0} chunks)</span>
           </span>
         );
       case 'PROCESSING':
         return (
-          <span className="badge badge-warning flex items-center gap-1" title="Generating embeddings">
-            <RotateCw size={12} className="animate-spin" />
+          <span className="badge badge-warning flex items-center gap-1" style={{ fontSize: '0.68rem', padding: '2px 7px' }} title="Generating embeddings">
+            <RotateCw size={11} className="animate-spin" />
             <span>Indexing...</span>
           </span>
         );
       case 'FAILED':
         return (
-          <span className="badge badge-danger flex items-center gap-1" title={doc.indexing_error || "Indexing failed"}>
-            <AlertTriangle size={12} />
+          <span className="badge badge-danger flex items-center gap-1" style={{ fontSize: '0.68rem', padding: '2px 7px' }} title={doc.indexing_error || "Indexing failed"}>
+            <AlertTriangle size={11} />
             <span>Indexing Failed</span>
           </span>
         );
       case 'PENDING':
       default:
         return (
-          <span className="badge badge-neutral flex items-center gap-1" title="Pending chunking and vector indexing">
-            <Clock size={12} />
+          <span className="badge badge-neutral flex items-center gap-1" style={{ fontSize: '0.68rem', padding: '2px 7px' }} title="Pending chunking and vector indexing">
+            <Clock size={11} />
             <span>Index Pending</span>
           </span>
         );
     }
   };
 
+  const activeFiltersCount = (search.trim() ? 1 : 0) + (typeFilter !== 'ALL' ? 1 : 0) + (statusFilter !== 'ALL' ? 1 : 0);
+
+  const handleResetFilters = () => {
+    setSearch('');
+    setTypeFilter('ALL');
+    setStatusFilter('ALL');
+    setSortBy('newest');
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Top Header & View Navigation */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-2 bg-surface-active p-1 rounded-lg">
+    <div className="doc-library-container">
+      {/* Primary Navigation & Upload Bar */}
+      <div className="meetings-toolbar">
+        <div className="meetings-filter-tabs">
           <button 
-            className={`btn btn-sm ${activeTab === 'documents' ? 'btn-primary' : 'btn-ghost'}`}
+            className={`filter-tab-pill ${activeTab === 'documents' ? 'active' : ''}`}
             onClick={() => setActiveTab('documents')}
+            id="tab-btn-documents"
           >
-            <FileText size={15} className="mr-1.5" />
-            Document Library ({documents.length})
+            <FileText size={15} />
+            <span>Document Library</span>
+            <span className="filter-badge-count">{documents.length}</span>
           </button>
           <button 
-            className={`btn btn-sm ${activeTab === 'search' ? 'btn-primary' : 'btn-ghost'}`}
+            className={`filter-tab-pill ${activeTab === 'search' ? 'active' : ''}`}
             onClick={() => setActiveTab('search')}
+            id="tab-btn-semantic-search"
           >
-            <Sparkles size={15} className="mr-1.5" />
-            Semantic Search
+            <Sparkles size={15} />
+            <span>AI Semantic Search</span>
           </button>
           <button 
-            className="btn btn-sm btn-ghost"
+            className="filter-tab-pill"
             onClick={() => navigate(`/projects/${project.id}/chat`)}
             title="Chat with documents using conversational RAG"
+            id="tab-btn-document-chat"
           >
-            <MessageSquare size={15} className="mr-1.5 text-primary" />
-            Document Chat
+            <MessageSquare size={15} />
+            <span>Document Chat</span>
           </button>
         </div>
 
-        {activeTab === 'documents' && (
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-            <span className="text-xs text-muted hidden md:inline">
-              PDF, TXT, MD, DOCX, CSV (Max 10MB)
-            </span>
-            <input 
-              type="file" 
-              className="hidden" 
-              ref={fileInputRef} 
-              onChange={handleFileChange}
-              accept=".pdf,.txt,.md,.docx,.csv"
-            />
-            <button 
-              className="btn btn-primary whitespace-nowrap" 
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-            >
-              {uploading ? (
-                <><div className="spinner mr-2" style={{width: 14, height: 14, borderWidth: 2}}></div> Uploading...</>
-              ) : (
-                <><Upload size={16} className="mr-1.5" /> Upload Document</>
-              )}
-            </button>
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <input 
+            type="file" 
+            className="hidden" 
+            ref={fileInputRef} 
+            onChange={handleFileChange}
+            accept=".pdf,.txt,.md,.docx,.csv"
+          />
+          <button 
+            className="btn-new-meeting" 
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            id="btn-upload-document"
+            title="Upload PDF, TXT, MD, DOCX, CSV (Max 10MB)"
+          >
+            {uploading ? (
+              <><div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} /> Uploading...</>
+            ) : (
+              <><Upload size={15} /> Upload Document</>
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* VIEW 1: DOCUMENT LIBRARY */}
+      {/* VIEW 1: DOCUMENT LIBRARY & SEARCH */}
       {activeTab === 'documents' && (
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="relative w-full sm:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
-              <input 
-                className="form-input" 
-                style={{ paddingLeft: '2.5rem' }}
-                placeholder="Filter document filename..." 
-                value={search} 
-                onChange={e => setSearch(e.target.value)} 
-              />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {/* Secondary Filter & Search Control Bar */}
+          <div className="doc-filter-bar">
+            {/* Left: Quick Search Input & Type Filter Pills */}
+            <div className="doc-filter-group" style={{ flex: 1, minWidth: 280 }}>
+              <div className="meetings-search-wrap" style={{ minWidth: 240, flex: '1 1 240px' }}>
+                <Search className="meetings-search-icon" size={15} />
+                <input 
+                  className="meetings-search-input" 
+                  placeholder="Filter documents by name..." 
+                  value={search} 
+                  onChange={e => setSearch(e.target.value)}
+                  id="doc-filter-search-input"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch('')}
+                    style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#71717a', cursor: 'pointer' }}
+                    title="Clear search"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+
+              {/* Type Filter Pills */}
+              <div className="doc-type-pills">
+                {(['ALL', 'pdf', 'docx', 'md', 'csv', 'txt'] as const).map(t => (
+                  <button
+                    key={t}
+                    className={`doc-type-pill ${typeFilter === t ? 'active' : ''}`}
+                    onClick={() => setTypeFilter(t)}
+                  >
+                    {t === 'ALL' ? 'All Types' : t.toUpperCase()}
+                  </button>
+                ))}
+              </div>
             </div>
-            
-            <button 
-              className="btn btn-secondary btn-sm"
-              onClick={() => setActiveTab('search')}
-            >
-              <Sparkles size={14} className="mr-1.5 text-accent" /> Search Passages with AI
-            </button>
+
+            {/* Right: Status Filter, Sorting, View Toggle */}
+            <div className="doc-filter-group">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <SlidersHorizontal size={13} color="#71717a" />
+                <select
+                  className="form-select text-xs py-1 px-2"
+                  value={statusFilter}
+                  onChange={e => setStatusFilter(e.target.value as any)}
+                  aria-label="Filter by Status"
+                  id="doc-status-filter"
+                  style={{ minWidth: 120 }}
+                >
+                  <option value="ALL">All Status</option>
+                  <option value="READY">Ready</option>
+                  <option value="PROCESSING">Processing</option>
+                  <option value="FAILED">Needs Attention</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <ArrowUpDown size={13} color="#71717a" />
+                <select
+                  className="form-select text-xs py-1 px-2"
+                  value={sortBy}
+                  onChange={e => setSortBy(e.target.value as any)}
+                  aria-label="Sort Documents"
+                  id="doc-sort-select"
+                  style={{ minWidth: 125 }}
+                >
+                  <option value="newest">Newest First</option>
+                  <option value="oldest">Oldest First</option>
+                  <option value="name">Name (A-Z)</option>
+                  <option value="size">File Size</option>
+                </select>
+              </div>
+
+              {/* View Mode Toggle: Grid vs Table */}
+              <div className="doc-view-toggle">
+                <button
+                  className={`doc-view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+                  onClick={() => setViewMode('grid')}
+                  title="Card Grid View"
+                  id="btn-view-grid"
+                >
+                  <LayoutGrid size={15} />
+                </button>
+                <button
+                  className={`doc-view-btn ${viewMode === 'table' ? 'active' : ''}`}
+                  onClick={() => setViewMode('table')}
+                  title="Table / List View"
+                  id="btn-view-table"
+                >
+                  <List size={15} />
+                </button>
+              </div>
+            </div>
           </div>
 
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-16 text-muted gap-4">
-              <div className="spinner"></div>
-              <p>Loading document library...</p>
+          {/* Active Filter Indicator */}
+          {activeFiltersCount > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: '#a1a1aa', padding: '0 4px' }}>
+              <span>
+                Showing <strong>{filteredAndSortedDocuments.length}</strong> of {documents.length} documents matching filters
+              </span>
+              <button
+                onClick={handleResetFilters}
+                className="btn btn-ghost"
+                style={{ fontSize: '0.72rem', padding: '2px 8px' }}
+              >
+                Reset Filters
+              </button>
             </div>
+          )}
+
+          {/* Content Area */}
+          {loading ? (
+            <ThinkingLoader
+              state="working"
+              size={64}
+              message="Loading project documents..."
+              description="Retrieving indexed documents, vector chunks, and extraction status"
+            />
           ) : documents.length === 0 ? (
-            <div className="empty-state">
+            <div className="empty-state py-12">
               <div className="empty-state-icon">
                 <FileText size={24} />
               </div>
               <h3 className="empty-state-title">No documents yet</h3>
               <p className="text-muted text-sm max-w-md">
-                Upload PDFs, Markdown specs, DOCX reports, or CSV spreadsheets. Text will be extracted, chunked, and embedded automatically.
+                Upload PDFs, Markdown specs, DOCX reports, or CSV spreadsheets. Text will be extracted, chunked, and embedded automatically for AI search and chat.
               </p>
+              <button
+                className="btn btn-primary"
+                style={{ marginTop: '0.75rem' }}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload size={15} /> Upload First Document
+              </button>
+            </div>
+          ) : filteredAndSortedDocuments.length === 0 ? (
+            <div className="empty-state py-12">
+              <div className="empty-state-icon">
+                <Search size={22} />
+              </div>
+              <h3 className="empty-state-title">No documents match your filters</h3>
+              <p className="text-muted text-sm max-w-md">
+                Try adjusting your search query, selecting "All Types", or clearing the status filter.
+              </p>
+              <button
+                className="btn btn-secondary"
+                style={{ marginTop: '0.75rem' }}
+                onClick={handleResetFilters}
+              >
+                Clear All Filters
+              </button>
+            </div>
+          ) : viewMode === 'table' ? (
+            /* Table View */
+            <div className="doc-table-container">
+              <table className="doc-table">
+                <thead>
+                  <tr>
+                    <th>Document</th>
+                    <th>Text Extraction</th>
+                    <th>Vector Indexing</th>
+                    <th>Size</th>
+                    <th>Uploaded</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredAndSortedDocuments.map((doc) => {
+                    const uploaderName = members.find(m => m.user_id === doc.uploader_id)?.user_name || 'Member';
+                    return (
+                      <tr key={doc.id} style={{ cursor: doc.status === 'READY' ? 'pointer' : 'default' }} onClick={() => doc.status === 'READY' && openPreview(doc)}>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                            <div style={{ padding: '5px', borderRadius: '6px', background: 'rgba(255, 255, 255, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              {getFileIcon(doc.content_type, doc.filename)}
+                            </div>
+                            <span style={{ fontWeight: 600, color: '#ffffff' }} title={doc.filename}>
+                              {doc.filename}
+                            </span>
+                          </div>
+                        </td>
+                        <td>{renderExtractionBadge(doc)}</td>
+                        <td>{renderIndexingBadge(doc)}</td>
+                        <td style={{ color: '#a1a1aa' }}>{formatSize(doc.file_size)}</td>
+                        <td style={{ color: '#71717a' }}>
+                          <div>{new Date(doc.created_at).toLocaleDateString()}</div>
+                          <div style={{ fontSize: '0.68rem', color: '#52525b' }}>by {uploaderName}</div>
+                        </td>
+                        <td style={{ textAlign: 'right' }} onClick={e => e.stopPropagation()}>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            {doc.status === 'READY' && (
+                              <button
+                                className="btn btn-ghost"
+                                style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                                onClick={() => openPreview(doc)}
+                                title="View Extracted Content"
+                              >
+                                <Eye size={13} />
+                              </button>
+                            )}
+                            {doc.status === 'FAILED' && (
+                              <button
+                                className="btn btn-secondary"
+                                style={{ padding: '4px 8px', fontSize: '0.72rem', color: '#fca5a5', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+                                onClick={e => handleRetryExtraction(doc.id, e)}
+                                disabled={retryingId === doc.id}
+                                title="Retry Extraction"
+                              >
+                                <RotateCw size={12} className={retryingId === doc.id ? 'animate-spin' : ''} />
+                              </button>
+                            )}
+                            {doc.status === 'READY' && doc.indexing_status === 'FAILED' && (
+                              <button
+                                className="btn btn-secondary"
+                                style={{ padding: '4px 8px', fontSize: '0.72rem', color: '#fca5a5', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+                                onClick={e => handleRetryIndexing(doc.id, e)}
+                                disabled={retryingIndexId === doc.id}
+                                title="Retry Indexing"
+                              >
+                                <RotateCw size={12} className={retryingIndexId === doc.id ? 'animate-spin' : ''} />
+                              </button>
+                            )}
+                            <button
+                              className="btn btn-ghost"
+                              style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                              onClick={e => handleDownload(doc, e)}
+                              title="Download File"
+                            >
+                              <Download size={13} />
+                            </button>
+                            <button
+                              className="btn btn-ghost"
+                              style={{ padding: '4px 8px', fontSize: '0.75rem', color: '#ef4444' }}
+                              onClick={e => handleDelete(doc.id, e)}
+                              title="Delete Document"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {documents.map(doc => (
-                <div 
-                  key={doc.id} 
-                  className="card hover:border-primary/50 transition-colors group flex flex-col justify-between"
-                  style={{ cursor: doc.status === 'READY' ? 'pointer' : 'default' }}
-                  onClick={() => {
-                    if (doc.status === 'READY') openPreview(doc);
-                  }}
-                >
-                  <div className="card-body">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2.5 bg-surface-active rounded-lg shrink-0">
-                        {getFileIcon(doc.content_type, doc.filename)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <h4 className="font-medium text-primary truncate" title={doc.filename}>
-                            {doc.filename}
-                          </h4>
-                        </div>
-
-                        {/* Dual Status Badges: Extraction + Vector Indexing */}
-                        <div className="mt-2.5 mb-2 flex flex-wrap gap-1.5 items-center">
-                          {renderExtractionBadge(doc)}
-                          {doc.status === 'READY' && renderIndexingBadge(doc)}
-                        </div>
-
-                        <div className="flex flex-col gap-0.5 text-xs text-muted">
-                          <span>Size: {formatSize(doc.file_size)}</span>
-                          <span>By: {members.find(m => m.user_id === doc.uploader_id)?.user_name || 'Project Member'}</span>
-                          <span>{new Date(doc.created_at).toLocaleDateString()}</span>
-                        </div>
-
-                        {/* Extraction Failure Alert */}
-                        {doc.status === 'FAILED' && (
-                          <div className="mt-3 p-2.5 rounded bg-surface-hover border border-danger/30 text-xs text-danger flex items-start gap-2">
-                            <AlertTriangle size={15} className="shrink-0 mt-0.5" />
-                            <span className="flex-1 leading-snug">
-                              {doc.processing_error || 'Text extraction failed.'}
-                            </span>
+            /* Grid View */
+            <div className="meetings-cards-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
+              {filteredAndSortedDocuments.map(doc => {
+                const uploaderName = members.find(m => m.user_id === doc.uploader_id)?.user_name || 'Member';
+                return (
+                  <div 
+                    key={doc.id} 
+                    className="meeting-card"
+                    style={{
+                      padding: '1.15rem',
+                      cursor: doc.status === 'READY' ? 'pointer' : 'default',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      minHeight: 185
+                    }}
+                    onClick={() => {
+                      if (doc.status === 'READY') openPreview(doc);
+                    }}
+                  >
+                    <div>
+                      {/* Top Row: File icon, Title & Delete */}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, flex: 1 }}>
+                          <div style={{ padding: '7px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            {getFileIcon(doc.content_type, doc.filename)}
                           </div>
-                        )}
-
-                        {/* Indexing Failure Alert */}
-                        {doc.status === 'READY' && doc.indexing_status === 'FAILED' && (
-                          <div className="mt-3 p-2.5 rounded bg-surface-hover border border-danger/30 text-xs text-danger flex items-start gap-2">
-                            <AlertTriangle size={15} className="shrink-0 mt-0.5" />
-                            <span className="flex-1 leading-snug">
-                              {doc.indexing_error || 'Vector indexing failed.'}
-                            </span>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#ffffff', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={doc.filename}>
+                              {doc.filename}
+                            </h4>
+                            <span style={{ fontSize: '0.72rem', color: '#71717a' }}>{formatSize(doc.file_size)}</span>
                           </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                        </div>
 
-                  <div className="card-footer flex items-center justify-between py-2.5 px-4" onClick={e => e.stopPropagation()}>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {doc.status === 'READY' && (
                         <button 
-                          className="btn btn-ghost text-xs" 
-                          onClick={() => openPreview(doc)}
-                          title="View Extracted Text and Chunks"
+                          className="btn-icon btn-ghost" 
+                          style={{ color: '#ef4444', padding: '4px', opacity: 0.7 }}
+                          onClick={e => handleDelete(doc.id, e)} 
+                          title="Delete Document"
                         >
-                          <Eye size={14} className="mr-1" /> View Content
+                          <Trash2 size={14} />
                         </button>
-                      )}
+                      </div>
+
+                      {/* Dual Badges */}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '0.75rem' }}>
+                        {renderExtractionBadge(doc)}
+                        {doc.status === 'READY' && renderIndexingBadge(doc)}
+                      </div>
+
+                      {/* Extraction Failure Alert */}
                       {doc.status === 'FAILED' && (
-                        <button 
-                          className="btn btn-secondary text-xs" 
-                          onClick={e => handleRetryExtraction(doc.id, e)}
-                          disabled={retryingId === doc.id}
-                          title="Retry Text Extraction"
-                        >
-                          <RotateCw size={13} className={`mr-1 ${retryingId === doc.id ? 'animate-spin' : ''}`} /> 
-                          {retryingId === doc.id ? 'Retrying...' : 'Retry Extraction'}
-                        </button>
+                        <div style={{ padding: '6px 10px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', fontSize: '0.72rem', color: '#fca5a5', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.75rem' }}>
+                          <AlertTriangle size={13} style={{ flexShrink: 0 }} />
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.processing_error || 'Text extraction failed.'}</span>
+                        </div>
                       )}
+
+                      {/* Indexing Failure Alert */}
                       {doc.status === 'READY' && doc.indexing_status === 'FAILED' && (
-                        <button 
-                          className="btn btn-secondary text-xs" 
-                          onClick={e => handleRetryIndexing(doc.id, e)}
-                          disabled={retryingIndexId === doc.id}
-                          title="Retry Vector Indexing"
-                        >
-                          <RotateCw size={13} className={`mr-1 ${retryingIndexId === doc.id ? 'animate-spin' : ''}`} /> 
-                          {retryingIndexId === doc.id ? 'Indexing...' : 'Retry Indexing'}
-                        </button>
+                        <div style={{ padding: '6px 10px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', fontSize: '0.72rem', color: '#fca5a5', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.75rem' }}>
+                          <AlertTriangle size={13} style={{ flexShrink: 0 }} />
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.indexing_error || 'Vector indexing failed.'}</span>
+                        </div>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-1">
-                      <button 
-                        className="btn btn-ghost text-xs" 
-                        onClick={e => handleDownload(doc, e)} 
-                        title="Download File"
-                      >
-                        <Download size={14} className="mr-1" /> Download
-                      </button>
-                      <button 
-                        className="btn-icon btn-ghost text-danger opacity-0 group-hover:opacity-100 transition-opacity" 
-                        onClick={e => handleDelete(doc.id, e)} 
-                        title="Delete Document and Chunks"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                    {/* Card Footer: Metadata & Quick Actions */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '0.75rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)', gap: '0.5rem', flexWrap: 'wrap' }} onClick={e => e.stopPropagation()}>
+                      <span style={{ fontSize: '0.7rem', color: '#71717a' }}>
+                        {uploaderName} • {new Date(doc.created_at).toLocaleDateString()}
+                      </span>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {doc.status === 'READY' && (
+                          <button 
+                            className="btn-card-action secondary" 
+                            style={{ padding: '4px 9px', fontSize: '0.72rem' }}
+                            onClick={() => openPreview(doc)}
+                            title="View Extracted Text and Chunks"
+                          >
+                            <Eye size={13} /> View
+                          </button>
+                        )}
+                        {doc.status === 'FAILED' && (
+                          <button 
+                            className="btn-card-action secondary" 
+                            style={{ padding: '4px 9px', fontSize: '0.72rem', borderColor: 'rgba(239, 68, 68, 0.3)', color: '#fca5a5' }}
+                            onClick={e => handleRetryExtraction(doc.id, e)}
+                            disabled={retryingId === doc.id}
+                          >
+                            <RotateCw size={12} className={retryingId === doc.id ? 'animate-spin' : ''} /> Retry
+                          </button>
+                        )}
+                        {doc.status === 'READY' && doc.indexing_status === 'FAILED' && (
+                          <button 
+                            className="btn-card-action secondary" 
+                            style={{ padding: '4px 9px', fontSize: '0.72rem', borderColor: 'rgba(239, 68, 68, 0.3)', color: '#fca5a5' }}
+                            onClick={e => handleRetryIndexing(doc.id, e)}
+                            disabled={retryingIndexId === doc.id}
+                          >
+                            <RotateCw size={12} className={retryingIndexId === doc.id ? 'animate-spin' : ''} /> Retry Index
+                          </button>
+                        )}
+                        <button 
+                          className="btn-card-action secondary" 
+                          style={{ padding: '4px 8px', fontSize: '0.72rem' }}
+                          onClick={e => handleDownload(doc, e)} 
+                          title="Download File"
+                        >
+                          <Download size={13} />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
       )}
 
-      {/* VIEW 2: SEMANTIC SEARCH */}
+      {/* VIEW 2: AI SEMANTIC PASSAGE SEARCH */}
       {activeTab === 'search' && (
-        <div className="space-y-6">
-          {/* Search Header Form */}
-          <div className="card p-5 border-border-subtle">
-            <form onSubmit={handleSemanticSearch} className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-semibold text-primary flex items-center gap-2">
-                    <Sparkles size={18} className="text-accent-primary" />
-                    Semantic Document Search
-                  </h3>
-                  <p className="text-xs text-muted mt-0.5">
-                    Search document passages using PostgreSQL pgvector similarity and FastEmbed embeddings.
-                  </p>
+        <div className="semantic-search-panel">
+          {/* Command Hero Search Card */}
+          <div className="semantic-search-hero-card">
+            <div className="semantic-hero-header">
+              <div className="semantic-hero-title-group">
+                <div className="semantic-hero-icon">
+                  <Sparkles size={22} />
                 </div>
-
-                <div className="flex items-center gap-3 flex-wrap">
-                  <div className="flex items-center gap-1.5">
-                    <label htmlFor="sensitivity-select" className="text-xs text-muted">Relevance:</label>
-                    <select 
-                      id="sensitivity-select"
-                      className="form-input text-xs py-1 px-2"
-                      value={semanticSensitivity}
-                      onChange={e => setSemanticSensitivity(e.target.value as 'balanced' | 'strict' | 'permissive')}
-                      disabled={semanticLoading}
-                      title="Threshold filtering: Balanced excludes unrelated passages (dist > 0.45), Strict requires high precision (dist > 0.35), Permissive allows broad matches (dist > 0.55)"
-                    >
-                      <option value="balanced">Balanced (≤ 0.45)</option>
-                      <option value="strict">Strict (≤ 0.35)</option>
-                      <option value="permissive">Permissive (≤ 0.55)</option>
-                    </select>
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    <label htmlFor="limit-select" className="text-xs text-muted">Limit:</label>
-                    <select 
-                      id="limit-select"
-                      className="form-input text-xs py-1 px-2"
-                      value={semanticLimit}
-                      onChange={e => setSemanticLimit(Number(e.target.value))}
-                      disabled={semanticLoading}
-                    >
-                      <option value={3}>Top 3</option>
-                      <option value={5}>Top 5</option>
-                      <option value={10}>Top 10</option>
-                    </select>
-                  </div>
+                <div>
+                  <h3 className="semantic-hero-title">AI Semantic Passage Search</h3>
+                  <p className="semantic-hero-desc">
+                    Search inside the text of your uploaded project documents using natural language questions.
+                  </p>
                 </div>
               </div>
 
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" size={17} />
-                  <input
-                    type="text"
-                    className="form-input w-full"
-                    style={{ paddingLeft: '2.75rem' }}
-                    placeholder="Ask a question or enter keywords (e.g. 'What are the system architecture components?')..."
-                    value={semanticQuery}
-                    onChange={e => setSemanticQuery(e.target.value)}
-                    maxLength={1000}
+              {/* Match Precision & Limit Settings */}
+              <div className="semantic-settings-group">
+                <div className="semantic-setting-item">
+                  <label htmlFor="semantic-precision-select" style={{ fontWeight: 600 }}>Precision:</label>
+                  <select
+                    id="semantic-precision-select"
+                    className="form-select text-xs py-1 px-2"
+                    value={semanticSensitivity}
+                    onChange={e => setSemanticSensitivity(e.target.value as any)}
                     disabled={semanticLoading}
-                  />
+                  >
+                    <option value="balanced">Balanced (Recommended)</option>
+                    <option value="strict">High Precision (Strict)</option>
+                    <option value="permissive">Broad Search (Permissive)</option>
+                  </select>
                 </div>
 
-                <button 
-                  type="submit" 
-                  className="btn btn-primary whitespace-nowrap"
-                  disabled={semanticLoading || !semanticQuery.trim()}
-                >
-                  {semanticLoading ? (
-                    <><div className="spinner mr-2" style={{ width: 14, height: 14, borderWidth: 2 }}></div> Searching...</>
-                  ) : (
-                    <><Sparkles size={15} className="mr-1.5" /> Search</>
-                  )}
-                </button>
+                <div className="semantic-setting-item">
+                  <label htmlFor="semantic-limit-select" style={{ fontWeight: 600 }}>Results:</label>
+                  <select
+                    id="semantic-limit-select"
+                    className="form-select text-xs py-1 px-2"
+                    value={semanticLimit}
+                    onChange={e => setSemanticLimit(Number(e.target.value))}
+                    disabled={semanticLoading}
+                  >
+                    <option value={3}>Top 3</option>
+                    <option value={5}>Top 5</option>
+                    <option value={10}>Top 10</option>
+                  </select>
+                </div>
+              </div>
+            </div>
 
-                {semanticResults !== null && (
-                  <button 
-                    type="button" 
-                    className="btn btn-ghost whitespace-nowrap"
+            {/* Interactive Search Bar */}
+            <form onSubmit={e => { e.preventDefault(); handleExecuteSemanticSearch(); }}>
+              <div className="semantic-search-box">
+                <Search size={18} color="#71717a" style={{ flexShrink: 0 }} />
+                <input
+                  type="text"
+                  className="semantic-search-input"
+                  placeholder="Ask a question or enter concepts (e.g. 'What are the system architecture components?')..."
+                  value={semanticQuery}
+                  onChange={e => setSemanticQuery(e.target.value)}
+                  maxLength={1000}
+                  disabled={semanticLoading}
+                  id="semantic-search-input"
+                />
+                {semanticQuery && (
+                  <button
+                    type="button"
                     onClick={handleClearSearch}
+                    className="semantic-btn-clear"
                     disabled={semanticLoading}
                   >
                     Clear
                   </button>
                 )}
+                <button
+                  type="submit"
+                  className="semantic-btn-submit"
+                  disabled={semanticLoading || !semanticQuery.trim()}
+                  id="btn-run-semantic-search"
+                >
+                  {semanticLoading ? (
+                    <><div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} /> Searching...</>
+                  ) : (
+                    <><Sparkles size={15} /> Search Passages</>
+                  )}
+                </button>
               </div>
             </form>
 
+            {/* Clickable Suggestion Prompt Chips */}
+            <div className="semantic-prompt-suggestions">
+              <span className="semantic-prompt-label">
+                <Compass size={13} />
+                Try searching for:
+              </span>
+              <div className="semantic-prompt-chips-row">
+                {SUGGESTED_PROMPTS.map((p, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    className="semantic-prompt-chip"
+                    onClick={() => handleExecuteSemanticSearch(p.query)}
+                    disabled={semanticLoading}
+                  >
+                    <Sparkles size={12} />
+                    <span>{p.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Error Banner */}
             {semanticError && (
-              <div className="mt-4 p-3 rounded-lg bg-surface-hover border border-danger/40 text-xs text-danger flex items-center justify-between gap-3">
+              <div className="mt-2 p-3 rounded-lg bg-surface-hover border border-danger/40 text-xs text-danger flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <AlertCircle size={16} className="shrink-0" />
                   <span>{semanticError}</span>
                 </div>
                 <button 
                   className="btn btn-ghost btn-sm text-xs" 
-                  onClick={() => handleSemanticSearch()}
+                  onClick={() => handleExecuteSemanticSearch()}
                 >
                   Retry
                 </button>
@@ -696,77 +1035,110 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
 
           {/* Search Loading State */}
           {semanticLoading && (
-            <div className="flex flex-col items-center justify-center py-16 text-muted gap-3">
-              <div className="spinner"></div>
-              <p className="text-sm">Generating vector embedding and querying pgvector similarity...</p>
-            </div>
+            <ThinkingLoader
+              state="searching"
+              size={64}
+              message="Generating vector embeddings & querying pgvector..."
+              description="Analyzing semantic cosine similarity across document passages"
+            />
           )}
 
           {/* Search Results Display */}
           {!semanticLoading && semanticResults !== null && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between text-xs text-muted px-1 flex-wrap gap-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem', color: '#a1a1aa', padding: '0 4px', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <span>
-                  Found <strong>{semanticResults.length}</strong> relevant {semanticResults.length === 1 ? 'passage' : 'passages'} for: <em>"{lastSearchedQuery}"</em>
+                  Found <strong>{semanticResults.length}</strong> matching {semanticResults.length === 1 ? 'passage' : 'passages'} for: <strong style={{ color: '#ffffff' }}>"{lastSearchedQuery}"</strong>
                 </span>
-                <span className="font-mono text-[11px] opacity-80">
-                  Threshold: Distance ≤ {appliedThreshold}
+                <span style={{ fontSize: '0.72rem', color: '#71717a' }}>
+                  Threshold: Distance ≤ {appliedThreshold} ({semanticSensitivity === 'strict' ? 'Strict' : semanticSensitivity === 'permissive' ? 'Broad' : 'Balanced'})
                 </span>
               </div>
 
               {semanticResults.length === 0 ? (
                 <div className="empty-state py-12">
-                  <Compass size={28} className="text-muted mb-2" />
-                  <h4 className="empty-state-title">No sufficiently relevant passages found</h4>
+                  <Compass size={32} className="text-muted mb-2" />
+                  <h4 className="empty-state-title">No matching passages found</h4>
                   <p className="text-muted text-sm max-w-md">
-                    No document passages in this project met the relevance threshold (cosine distance ≤ {appliedThreshold}) for your question. Try rephrasing your question or uploading relevant documents.
+                    No passages in your documents met the current precision threshold for "{lastSearchedQuery}".
                   </p>
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => handleExecuteSemanticSearch(lastSearchedQuery, 'permissive')}
+                    >
+                      <Sparkles size={14} /> Try Broad Search
+                    </button>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={handleClearSearch}
+                    >
+                      Clear Search
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {semanticResults.map((item, idx) => (
-                    <div key={item.chunk_id} className="search-result-card">
-                      <div className="flex items-center justify-between gap-3 flex-wrap">
-                        <div className="flex items-center gap-2">
-                          <span className="badge badge-neutral text-xs font-mono font-bold">
-                            #{idx + 1}
-                          </span>
-                          <span className="font-semibold text-primary text-sm flex items-center gap-1.5">
-                            <FileText size={15} className="text-primary" />
-                            {item.document_filename}
-                          </span>
-                          <span className="badge badge-neutral text-xs">
-                            Chunk #{item.chunk_index + 1}
-                          </span>
+                <div className="search-results-list">
+                  {semanticResults.map((item, idx) => {
+                    const isCopied = copiedPassageId === item.chunk_id;
+                    return (
+                      <div key={item.chunk_id} className="search-result-card">
+                        <div className="search-result-card-header">
+                          <div className="search-result-doc-info">
+                            <span className="search-result-rank">#{idx + 1}</span>
+                            <div style={{ padding: '5px', borderRadius: '6px', background: 'rgba(255, 255, 255, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <FileText size={16} color="#818cf8" />
+                            </div>
+                            <span 
+                              className="search-result-filename" 
+                              title={`Click to view ${item.document_filename}`}
+                              style={{ cursor: 'pointer' }}
+                              onClick={() => openPreviewById(item.document_id, 'chunks')}
+                            >
+                              {item.document_filename}
+                            </span>
+                            <span className="search-result-chunk-tag">
+                              Chunk #{item.chunk_index + 1}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            {renderRelevanceBadge(item)}
+                          </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          {renderRelevanceBadge(item)}
-                          <button
-                            className="btn btn-ghost btn-sm text-xs"
-                            onClick={() => openPreviewById(item.document_id, 'chunks')}
-                            title="View document chunks in modal"
-                          >
-                            <Eye size={13} className="mr-1" /> View Context
-                          </button>
+                        {/* Passage Quote with Accent Left Border */}
+                        <div className="search-passage-quote">
+                          {item.content}
+                        </div>
+
+                        {/* Bottom Actions Bar */}
+                        <div className="search-result-actions-bar">
+                          <span>{item.char_count} characters</span>
+
+                          <div className="search-result-btns">
+                            <button
+                              className="btn-passage-action"
+                              onClick={() => handleCopyPassage(item)}
+                              title="Copy Passage Text"
+                            >
+                              {isCopied ? <Check size={13} color="#34d399" /> : <Copy size={13} />}
+                              <span>{isCopied ? 'Copied!' : 'Copy Passage'}</span>
+                            </button>
+
+                            <button
+                              className="btn-passage-action"
+                              onClick={() => openPreviewById(item.document_id, 'chunks')}
+                              title="View Document Chunks in Modal"
+                            >
+                              <Eye size={13} />
+                              <span>View Context</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
-
-                      <div className="search-passage-quote font-mono">
-                        {item.content}
-                      </div>
-
-                      <div className="flex items-center justify-between text-xs text-muted mt-2.5 pt-2 border-t border-border-subtle flex-wrap gap-2">
-                        <span>Length: {item.char_count} chars</span>
-                        <span title="Cosine distance from pgvector (<=>). Values <= threshold are retained.">
-                          Distance: <strong>{item.distance}</strong> (Threshold: ≤ {appliedThreshold})
-                        </span>
-                        <span className="italic opacity-70 hidden sm:inline text-[11px]">
-                          Vector proximity, not factual certainty
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -774,13 +1146,13 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
 
           {/* Initial State before searching */}
           {!semanticLoading && semanticResults === null && (
-            <div className="empty-state py-16">
-              <div className="empty-state-icon">
-                <Sparkles size={26} className="text-accent-primary" />
+            <div className="empty-state py-10" style={{ background: 'rgba(20, 20, 24, 0.5)', border: '1px dashed rgba(255, 255, 255, 0.08)', borderRadius: '16px' }}>
+              <div className="empty-state-icon" style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#818cf8' }}>
+                <Sparkles size={24} />
               </div>
-              <h3 className="empty-state-title">Search Project Documents with AI</h3>
-              <p className="text-muted text-sm max-w-lg text-center">
-                Query requirements, specifications, meeting notes, and project documents using vector similarity. FastEmbed generates 384-dimensional embeddings and Supabase pgvector retrieves the closest matching passages.
+              <h3 className="empty-state-title">Ask anything across your project documents</h3>
+              <p className="text-muted text-sm max-w-md text-center">
+                Search specifications, reports, schemas, and meeting notes using vector similarity. Click one of the suggested prompts above or type your own question.
               </p>
             </div>
           )}
@@ -790,7 +1162,7 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
       {/* Extracted Text & Vector Chunks Preview Modal */}
       {previewDoc && (
         <div className="modal-overlay" onClick={() => setPreviewDoc(null)}>
-          <div className="modal-content" style={{ maxWidth: '48rem' }} onClick={e => e.stopPropagation()}>
+          <div className="modal-content" style={{ maxWidth: '52rem' }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="p-2 bg-surface-active rounded-lg shrink-0">
@@ -840,10 +1212,11 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
 
               {previewTab === 'text' ? (
                 previewLoading ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-muted gap-3">
-                    <div className="spinner"></div>
-                    <p className="text-sm">Retrieving extracted document text...</p>
-                  </div>
+                  <ThinkingLoader
+                    state="working"
+                    size={32}
+                    message="Retrieving extracted document text..."
+                  />
                 ) : previewData?.status === 'FAILED' ? (
                   <div className="p-4 rounded-lg bg-surface-hover border border-danger/30 text-sm text-danger flex flex-col gap-3">
                     <div className="flex items-center gap-2 font-medium">
@@ -894,10 +1267,11 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
               ) : (
                 /* Vector Chunks Tab */
                 chunksLoading ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-muted gap-3">
-                    <div className="spinner"></div>
-                    <p className="text-sm">Loading vector chunks...</p>
-                  </div>
+                  <ThinkingLoader
+                    state="searching"
+                    size={32}
+                    message="Loading vector chunks & embeddings..."
+                  />
                 ) : chunksList.length === 0 ? (
                   <div className="p-6 rounded-lg bg-surface-hover border border-border-subtle flex flex-col items-center justify-center gap-3 text-center">
                     <Layers size={28} className="text-muted" />

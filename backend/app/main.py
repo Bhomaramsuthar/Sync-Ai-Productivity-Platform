@@ -98,6 +98,8 @@ from app.tasks.router import router as task_router
 from app.documents.router import router as document_router
 from app.rag.router import router as rag_router
 from app.ai.router import router as ai_router
+from app.calendar.router import router as calendar_router
+from app.meetings.router import router as meeting_router
 
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(workspace_router, prefix="/api/v1/workspaces", tags=["workspaces"])
@@ -106,6 +108,8 @@ app.include_router(task_router, prefix="/api/v1", tags=["tasks"])
 app.include_router(document_router, prefix="/api/v1", tags=["documents"])
 app.include_router(rag_router, prefix="/api/v1", tags=["rag"])
 app.include_router(ai_router, prefix="/api/v1", tags=["ai"])
+app.include_router(calendar_router, prefix="/api/v1", tags=["calendar"])
+app.include_router(meeting_router, prefix="/api/v1", tags=["meetings"])
 
 @app.get("/health")
 def health_check():

@@ -1,27 +1,32 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { projectService, type Project } from '../services/projectService';
 import { workspaceService, type Workspace } from '../services/workspaceService';
-import { LayoutGrid, Plus, ArrowLeft } from 'lucide-react';
+import { FolderKanban, Plus, ArrowLeft, Search, Clock, ArrowRight, X } from 'lucide-react';
+import { extractErrorMessage } from '../services/api';
 
-const ProjectsList = () => {
+const ProjectsList: React.FC = () => {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const loadData = async () => {
       try {
+        setLoading(true);
+        setError('');
         const [wsRes, projRes] = await Promise.all([
           workspaceService.get(workspaceId!),
-          projectService.list(workspaceId!)
+          projectService.list(workspaceId!),
         ]);
         setWorkspace(wsRes.data);
         setProjects(projRes.data);
-      } catch (err) {
-        console.error(err);
+      } catch (err: any) {
+        setError(extractErrorMessage(err, 'Failed to load projects'));
       } finally {
         setLoading(false);
       }
@@ -29,56 +34,197 @@ const ProjectsList = () => {
     loadData();
   }, [workspaceId]);
 
-  if (loading) return (
-    <div className="loading-screen">
-      <div className="spinner"></div>
-      <p>Loading projects...</p>
-    </div>
-  );
+  const filtered = projects.filter((p) => {
+    const q = searchQuery.toLowerCase();
+    return p.name.toLowerCase().includes(q) || (p.description && p.description.toLowerCase().includes(q));
+  });
 
   return (
-    <div>
-      <button className="btn btn-ghost mb-4" onClick={() => navigate(`/workspaces/${workspaceId}`)}>
-        <ArrowLeft size={16} />
-        Back to Workspace
-      </button>
-      
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Projects</h1>
-          <p className="page-subtitle">{workspace?.name}</p>
-        </div>
-        <button className="btn btn-primary" onClick={() => navigate(`/workspaces/${workspaceId}/projects/new`)}>
-          <Plus size={16} />
-          New Project
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: 1360, margin: '0 auto', width: '100%' }}>
+      {/* Back button */}
+      <div>
+        <button
+          className="btn btn-ghost"
+          onClick={() => navigate(`/workspaces/${workspaceId}`)}
+          style={{ paddingLeft: 0, color: 'var(--text-secondary)' }}
+        >
+          <ArrowLeft size={16} />
+          <span>Back to Workspace</span>
         </button>
       </div>
 
-      {projects.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-state-icon">
-            <LayoutGrid size={24} />
+      {/* Hero Header Banner */}
+      <div className="page-hero-banner">
+        <div className="page-hero-info">
+          <div className="page-hero-icon">
+            <FolderKanban size={24} />
           </div>
-          <h3 className="empty-state-title">No projects found</h3>
-          <p className="text-muted mb-6">Create a project to start organizing tasks.</p>
-          <button className="btn btn-primary" onClick={() => navigate(`/workspaces/${workspaceId}/projects/new`)}>
+          <div>
+            <h1 className="page-hero-title">Projects Roadmap</h1>
+            <p className="page-hero-subtitle">
+              {workspace ? `Projects inside ${workspace.name}` : 'Organize deliverables, kanban boards, and task execution.'}
+            </p>
+          </div>
+        </div>
+
+        <div className="page-hero-actions">
+          <button
+            className="btn btn-primary"
+            onClick={() => navigate(`/workspaces/${workspaceId}/projects/new`)}
+            id="create-project-btn"
+          >
             <Plus size={16} />
-            New Project
+            <span>New Project</span>
           </button>
         </div>
+      </div>
+
+      {/* Toolbar: Search */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+        <div style={{ position: 'relative', minWidth: 280 }}>
+          <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#71717a' }} />
+          <input
+            type="text"
+            placeholder="Search projects..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="form-input"
+            style={{ paddingLeft: 38, height: 38 }}
+            id="projects-search-input"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              style={{
+                position: 'absolute',
+                right: 10,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'transparent',
+                border: 'none',
+                color: '#71717a',
+                cursor: 'pointer',
+              }}
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
+        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+          Showing {filtered.length} of {projects.length} project{projects.length !== 1 ? 's' : ''}
+        </span>
+      </div>
+
+      {error && <div className="error-message">{error}</div>}
+
+      {/* Loading Skeletons */}
+      {loading ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '1.25rem' }}>
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="card" style={{ height: 180, padding: '1.25rem' }} />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">
+            <FolderKanban size={26} />
+          </div>
+          <h3 className="empty-state-title">
+            {searchQuery ? `No projects matching "${searchQuery}"` : 'No projects found'}
+          </h3>
+          <p className="text-muted" style={{ maxWidth: 420, fontSize: '0.8125rem' }}>
+            {searchQuery
+              ? 'Try searching with a different name or clear the search filter.'
+              : 'Create your first project to start organizing tasks, tracking progress, and extracting action items.'}
+          </p>
+          {searchQuery ? (
+            <button onClick={() => setSearchQuery('')} className="btn btn-secondary">
+              Clear Search
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate(`/workspaces/${workspaceId}/projects/new`)}
+              className="btn btn-primary"
+            >
+              <Plus size={16} />
+              Create First Project
+            </button>
+          )}
+        </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 'var(--space-6)' }}>
-          {projects.map(p => (
-            <div key={p.id} className="card" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column' }} onClick={() => navigate(`/projects/${p.id}`)}>
-              <div className="card-header">
-                <h3 className="card-title">{p.name}</h3>
+        /* Project Cards Grid */
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '1.25rem' }}>
+          {filtered.map((p) => (
+            <div
+              key={p.id}
+              onClick={() => navigate(`/projects/${p.id}`)}
+              className="card"
+              style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+              id={`project-card-${p.id}`}
+            >
+              <div style={{ padding: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                    <div
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 10,
+                        background: 'rgba(99, 102, 241, 0.16)',
+                        color: '#818cf8',
+                        border: '1px solid rgba(99, 102, 241, 0.28)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <FolderKanban size={18} />
+                    </div>
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#ffffff', margin: 0 }}>
+                      {p.name}
+                    </h3>
+                  </div>
+
+                  <span className="badge badge-primary">{p.status || 'ACTIVE'}</span>
+                </div>
+
+                <p
+                  style={{
+                    fontSize: '0.8125rem',
+                    color: 'var(--text-secondary)',
+                    lineHeight: 1.5,
+                    margin: '0 0 0.5rem 0',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {p.description || 'No description provided.'}
+                </p>
               </div>
-              <div className="card-body" style={{ flex: 1 }}>
-                <p className="text-muted text-sm">{p.description || 'No description provided'}</p>
-              </div>
-              <div className="card-footer flex justify-between items-center">
-                <span className={`badge badge-neutral`}>{p.status}</span>
-                <span className="text-muted text-xs">{new Date(p.created_at).toLocaleDateString()}</span>
+
+              <div
+                style={{
+                  padding: '0.85rem 1.25rem',
+                  borderTop: '1px solid var(--border-subtle)',
+                  background: 'rgba(0, 0, 0, 0.25)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  fontSize: '0.75rem',
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <Clock size={12} />
+                  Created {new Date(p.created_at).toLocaleDateString()}
+                </span>
+                <span style={{ color: '#818cf8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <span>Open Roadmap</span>
+                  <ArrowRight size={13} />
+                </span>
               </div>
             </div>
           ))}

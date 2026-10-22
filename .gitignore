@@ -18,3 +18,4 @@ coverage/
 .pytest_cache/
 *.db
 *.sqlite*
+e2e_meeting_info.json
