@@ -11,6 +11,7 @@ import {
   Sparkles,
   Save,
 } from 'lucide-react';
+import { SelectBox } from './ui/select';
 import type { MeetingSuggestedItem, SuggestionApproveRequest } from '../services/meetingService';
 
 interface SuggestionCardProps {
@@ -162,18 +163,19 @@ export const SuggestionCard: React.FC<SuggestionCardProps> = ({
             {isTask && (
               <div>
                 <label className="field-label">Assignee</label>
-                <select
+                <SelectBox
+                  size="sm"
                   value={assigneeId}
-                  onChange={(e) => setAssigneeId(e.target.value)}
-                  className="field-select"
-                >
-                  <option value="">Unassigned</option>
-                  {workspaceMembers.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name || m.email}
-                    </option>
-                  ))}
-                </select>
+                  onValueChange={setAssigneeId}
+                  placeholder="Unassigned"
+                  options={[
+                    { value: '', label: 'Unassigned' },
+                    ...workspaceMembers.map((m) => ({
+                      value: m.id,
+                      label: m.name || m.email,
+                    })),
+                  ]}
+                />
               </div>
             )}
             <div>
@@ -188,16 +190,17 @@ export const SuggestionCard: React.FC<SuggestionCardProps> = ({
             {isTask && (
               <div>
                 <label className="field-label">Priority</label>
-                <select
+                <SelectBox
+                  size="sm"
                   value={priority}
-                  onChange={(e) => setPriority(e.target.value)}
-                  className="field-select"
-                >
-                  <option value="LOW">Low</option>
-                  <option value="MEDIUM">Medium</option>
-                  <option value="HIGH">High</option>
-                  <option value="URGENT">Urgent</option>
-                </select>
+                  onValueChange={setPriority}
+                  options={[
+                    { value: 'LOW', label: 'Low' },
+                    { value: 'MEDIUM', label: 'Medium' },
+                    { value: 'HIGH', label: 'High' },
+                    { value: 'URGENT', label: 'Urgent' },
+                  ]}
+                />
               </div>
             )}
           </div>
@@ -295,17 +298,15 @@ export const SuggestionCard: React.FC<SuggestionCardProps> = ({
       {!isApproved && !isRejected && !isEditing && isTask && projects.length > 1 && (
         <div style={{ margin: '4px 0' }}>
           <label className="field-label" style={{ marginBottom: '4px', display: 'block' }}>Target Project to Create Task in:</label>
-          <select
+          <SelectBox
+            size="sm"
             value={targetProjectId}
-            onChange={(e) => setTargetProjectId(e.target.value)}
-            className="field-select"
-          >
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+            onValueChange={setTargetProjectId}
+            options={projects.map((p) => ({
+              value: p.id,
+              label: p.name,
+            }))}
+          />
         </div>
       )}
 

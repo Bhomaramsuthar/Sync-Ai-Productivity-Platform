@@ -16,6 +16,8 @@ import {
   Plus,
 } from 'lucide-react';
 import { ThinkingLoader } from './ThinkingLoader';
+import { SelectBox } from './ui/select';
+import { toast } from '../utils/toast';
 
 interface Props {
   projectId: string;
@@ -64,6 +66,7 @@ export const AITaskAssistantModal: React.FC<Props> = ({
   const handleGenerateBreakdown = async () => {
     if (!title.trim()) {
       setError('Please provide a task title to break down.');
+      toast.warning('Title Required', 'Please provide a task title to break down.');
       return;
     }
     setLoading(true);
@@ -74,9 +77,11 @@ export const AITaskAssistantModal: React.FC<Props> = ({
         description: description.trim() || undefined,
       });
       setSubtasks(res.data.subtasks.map((st) => ({ checked: true, data: st })));
+      toast.success('Breakdown Generated', `AI proposed ${res.data.subtasks.length} actionable subtasks.`);
     } catch (err: any) {
       const msg = err.response?.data?.detail?.error?.message || 'Failed to generate subtasks';
       setError(msg);
+      toast.error('Breakdown Failed', msg);
     } finally {
       setLoading(false);
     }
@@ -86,6 +91,7 @@ export const AITaskAssistantModal: React.FC<Props> = ({
     const selected = subtasks.filter((s) => s.checked);
     if (selected.length === 0) {
       setError('Please select at least one subtask to create.');
+      toast.warning('Selection Required', 'Please select at least one subtask to create.');
       return;
     }
 
@@ -100,6 +106,7 @@ export const AITaskAssistantModal: React.FC<Props> = ({
           status: 'TODO',
         });
       }
+      toast.success('Subtasks Created', `Successfully created ${selected.length} subtasks in project.`);
       if (onTasksCreated) {
         onTasksCreated();
       }
@@ -107,6 +114,7 @@ export const AITaskAssistantModal: React.FC<Props> = ({
     } catch (err: any) {
       const msg = err.response?.data?.detail?.error?.message || 'Failed to create confirmed subtasks';
       setError(msg);
+      toast.error('Creation Failed', msg);
     } finally {
       setCreatingTasks(false);
     }
@@ -115,6 +123,7 @@ export const AITaskAssistantModal: React.FC<Props> = ({
   const handleSuggestPriority = async () => {
     if (!title.trim()) {
       setError('Please provide a task title to evaluate priority.');
+      toast.warning('Title Required', 'Please provide a task title to evaluate priority.');
       return;
     }
     setLoading(true);
@@ -126,9 +135,11 @@ export const AITaskAssistantModal: React.FC<Props> = ({
         due_date: initialDueDate || undefined,
       });
       setPriorityResult(res.data);
+      toast.success(`Priority: ${res.data.suggested_priority}`, res.data.reasoning);
     } catch (err: any) {
       const msg = err.response?.data?.detail?.error?.message || 'Failed to suggest priority';
       setError(msg);
+      toast.error('Priority Failed', msg);
     } finally {
       setLoading(false);
     }
@@ -137,6 +148,7 @@ export const AITaskAssistantModal: React.FC<Props> = ({
   const handleUnblock = async () => {
     if (!title.trim() || !blocker.trim()) {
       setError('Please provide both the task title and the specific blocker.');
+      toast.warning('Details Required', 'Please provide both the task title and the specific blocker.');
       return;
     }
     setLoading(true);
@@ -149,9 +161,11 @@ export const AITaskAssistantModal: React.FC<Props> = ({
         blocker: blocker.trim(),
       });
       setUnblockResult(res.data);
+      toast.success('Guidance Ready', 'AI generated root cause analysis and next steps.');
     } catch (err: any) {
       const msg = err.response?.data?.detail?.error?.message || 'Failed to analyze blocker';
       setError(msg);
+      toast.error('Analysis Failed', msg);
     } finally {
       setLoading(false);
     }
@@ -203,47 +217,43 @@ export const AITaskAssistantModal: React.FC<Props> = ({
           </button>
         </div>
 
-        {/* Tab Selector */}
-        <div className="flex gap-2 border-b border-subtle px-6 pt-2">
-          <button
-            className={`btn btn-ghost text-xs ${activeTab === 'breakdown' ? 'text-primary' : 'text-muted'}`}
-            style={{
-              borderBottom: activeTab === 'breakdown' ? '2px solid var(--accent-primary)' : '2px solid transparent',
-              borderRadius: 0,
-            }}
-            onClick={() => {
-              setActiveTab('breakdown');
-              setError(null);
-            }}
-          >
-            <ListTree size={14} className="mr-1.5" /> Break Down Subtasks
-          </button>
-          <button
-            className={`btn btn-ghost text-xs ${activeTab === 'unblock' ? 'text-primary' : 'text-muted'}`}
-            style={{
-              borderBottom: activeTab === 'unblock' ? '2px solid var(--accent-primary)' : '2px solid transparent',
-              borderRadius: 0,
-            }}
-            onClick={() => {
-              setActiveTab('unblock');
-              setError(null);
-            }}
-          >
-            <AlertCircle size={14} className="mr-1.5" /> Unblock & Next Actions
-          </button>
-          <button
-            className={`btn btn-ghost text-xs ${activeTab === 'priority' ? 'text-primary' : 'text-muted'}`}
-            style={{
-              borderBottom: activeTab === 'priority' ? '2px solid var(--accent-primary)' : '2px solid transparent',
-              borderRadius: 0,
-            }}
-            onClick={() => {
-              setActiveTab('priority');
-              setError(null);
-            }}
-          >
-            <Flag size={14} className="mr-1.5" /> Suggest Priority
-          </button>
+        {/* Sileo Segmented Pill Track Selector */}
+        <div style={{ padding: '0.85rem 1.5rem 0' }}>
+          <div className="segmented-pills-track" style={{ width: '100%', display: 'flex' }}>
+            <button
+              type="button"
+              className={`segmented-pill-item ${activeTab === 'breakdown' ? 'active' : ''}`}
+              style={{ flex: 1, justifyContent: 'center' }}
+              onClick={() => {
+                setActiveTab('breakdown');
+                setError(null);
+              }}
+            >
+              <ListTree size={14} /> <span>Break Down Subtasks</span>
+            </button>
+            <button
+              type="button"
+              className={`segmented-pill-item ${activeTab === 'unblock' ? 'active' : ''}`}
+              style={{ flex: 1, justifyContent: 'center' }}
+              onClick={() => {
+                setActiveTab('unblock');
+                setError(null);
+              }}
+            >
+              <AlertCircle size={14} /> <span>Unblock Actions</span>
+            </button>
+            <button
+              type="button"
+              className={`segmented-pill-item ${activeTab === 'priority' ? 'active' : ''}`}
+              style={{ flex: 1, justifyContent: 'center' }}
+              onClick={() => {
+                setActiveTab('priority');
+                setError(null);
+              }}
+            >
+              <Flag size={14} /> <span>Suggest Priority</span>
+            </button>
+          </div>
         </div>
 
         <div className="modal-body flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-4">
@@ -341,16 +351,19 @@ export const AITaskAssistantModal: React.FC<Props> = ({
                               value={item.data.title}
                               onChange={(e) => updateSubtaskTitle(idx, e.target.value)}
                             />
-                            <select
-                              className="form-select text-xs py-0.5 px-2 w-28 bg-surface"
-                              value={item.data.priority}
-                              onChange={(e) => updateSubtaskPriority(idx, e.target.value)}
-                            >
-                              <option value="LOW">LOW</option>
-                              <option value="MEDIUM">MEDIUM</option>
-                              <option value="HIGH">HIGH</option>
-                              <option value="URGENT">URGENT</option>
-                            </select>
+                            <div style={{ width: '115px' }}>
+                              <SelectBox
+                                size="sm"
+                                value={item.data.priority}
+                                onValueChange={(val) => updateSubtaskPriority(idx, val)}
+                                options={[
+                                  { value: 'LOW', label: 'LOW' },
+                                  { value: 'MEDIUM', label: 'MEDIUM' },
+                                  { value: 'HIGH', label: 'HIGH' },
+                                  { value: 'URGENT', label: 'URGENT' },
+                                ]}
+                              />
+                            </div>
                           </div>
                           <p className="text-muted leading-relaxed">{item.data.description}</p>
                         </div>

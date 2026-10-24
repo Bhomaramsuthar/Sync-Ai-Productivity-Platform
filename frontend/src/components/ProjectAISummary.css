@@ -233,13 +233,21 @@
 
 .recommendation-action {
   font-size: 0.75rem;
-  color: var(--accent-primary);
+  color: #818cf8;
   background: var(--accent-primary-alpha);
-  padding: 0.4rem 0.6rem;
-  border-radius: var(--radius-sm);
-  display: flex;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-full);
+  display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  font-weight: 500;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  transition: all var(--sileo-duration) var(--sileo-spring-easing);
+}
+
+.recommendation-action:hover {
+  background: rgba(99, 102, 241, 0.25);
+  transform: translateY(-1px);
 }
 
 /* Setup Banner */

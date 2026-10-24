@@ -18,6 +18,7 @@ import {
   RefreshCw,
   Search,
 } from 'lucide-react';
+import { toast } from '../utils/toast';
 import {
   chatService,
   type ConversationSummary,
@@ -375,6 +376,7 @@ export const DocumentChat: React.FC<DocumentChatProps> = ({ project }) => {
     } catch (err: any) {
       const errDetail = err.response?.data?.detail?.error?.message || 'Failed to generate grounded answer from AI.';
       setErrorBanner(errDetail);
+      toast.error('AI Query Failed', errDetail);
       setLastFailedQuestion(questionToSend);
       // Remove optimistic message on failure
       setActiveConversation((prev) =>
@@ -410,8 +412,11 @@ export const DocumentChat: React.FC<DocumentChatProps> = ({ project }) => {
       if (activeConversation?.id === convId) {
         setActiveConversation((prev) => (prev ? { ...prev, title: res.data.title } : prev));
       }
+      toast.success('Conversation Renamed', `New title: "${res.data.title}"`);
     } catch (err: any) {
-      setErrorBanner(err.response?.data?.detail?.error?.message || 'Failed to rename conversation.');
+      const msg = err.response?.data?.detail?.error?.message || 'Failed to rename conversation.';
+      setErrorBanner(msg);
+      toast.error('Rename Failed', msg);
     } finally {
       setEditingConvId(null);
     }
@@ -425,6 +430,7 @@ export const DocumentChat: React.FC<DocumentChatProps> = ({ project }) => {
       await chatService.deleteConversation(convId);
       const updatedList = conversations.filter((c) => c.id !== convId);
       setConversations(updatedList);
+      toast.success('Chat Deleted', 'Conversation and history removed.');
 
       if (activeConversation?.id === convId) {
         if (updatedList.length > 0) {
@@ -435,7 +441,9 @@ export const DocumentChat: React.FC<DocumentChatProps> = ({ project }) => {
         }
       }
     } catch (err: any) {
-      setErrorBanner(err.response?.data?.detail?.error?.message || 'Failed to delete conversation.');
+      const msg = err.response?.data?.detail?.error?.message || 'Failed to delete conversation.';
+      setErrorBanner(msg);
+      toast.error('Delete Failed', msg);
     }
   };
 

@@ -20,10 +20,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: rgba(24, 24, 27, 0.7);
+  padding: 0.75rem 1.15rem;
+  background: rgba(19, 23, 34, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(12px);
 }
 
 .doc-filter-group {
@@ -36,60 +37,63 @@
 .doc-type-pills {
   display: inline-flex;
   align-items: center;
-  background: rgba(14, 14, 18, 0.6);
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 9px;
-  padding: 2px;
-  gap: 2px;
+  border-radius: var(--radius-full);
+  padding: 3px;
+  gap: 3px;
+  backdrop-filter: blur(8px);
 }
 
 .doc-type-pill {
-  padding: 4px 10px;
+  padding: 4px 12px;
   font-size: 0.75rem;
   font-weight: 500;
-  border-radius: 7px;
+  border-radius: var(--radius-full);
   background: transparent;
   color: #a1a1aa;
   border: none;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all var(--sileo-duration) var(--sileo-spring-easing);
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  white-space: nowrap;
 }
 
 .doc-type-pill:hover {
   color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .doc-type-pill.active {
-  background: #6366f1;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
   color: #ffffff;
   font-weight: 600;
-  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.35);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .doc-view-toggle {
   display: inline-flex;
   align-items: center;
-  background: rgba(14, 14, 18, 0.6);
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  padding: 2px;
-  gap: 2px;
+  border-radius: var(--radius-full);
+  padding: 3px;
+  gap: 3px;
 }
 
 .doc-view-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 5px 8px;
-  border-radius: 6px;
+  padding: 5px 10px;
+  border-radius: var(--radius-full);
   background: transparent;
   border: none;
   color: #71717a;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all var(--sileo-duration) var(--sileo-spring-easing);
 }
 
 .doc-view-btn:hover {
@@ -97,7 +101,7 @@
 }
 
 .doc-view-btn.active {
-  background: #27272a;
+  background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
 }
 
@@ -153,11 +157,11 @@
 }
 
 .semantic-search-hero-card {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(24, 24, 28, 0.95) 50%, rgba(18, 18, 22, 0.98) 100%);
-  border: 1px solid rgba(99, 102, 241, 0.25);
-  border-radius: 16px;
-  padding: 1.5rem 1.75rem;
-  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(19, 23, 34, 0.95) 55%, rgba(24, 29, 42, 0.9) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: var(--radius-xl);
+  padding: 1.6rem 1.85rem;
+  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.65), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
   gap: 1.15rem;
@@ -178,9 +182,9 @@
 }
 
 .semantic-hero-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
   background: rgba(99, 102, 241, 0.18);
   border: 1px solid rgba(99, 102, 241, 0.35);
   display: flex;
@@ -188,6 +192,7 @@
   justify-content: center;
   color: #818cf8;
   flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
 }
 
 .semantic-hero-title {
@@ -212,8 +217,8 @@
   gap: 0.5rem;
   background: rgba(14, 14, 18, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 12px;
-  padding: 5px 6px 5px 14px;
+  border-radius: var(--radius-full);
+  padding: 5px 8px 5px 18px;
   transition: all 0.2s ease;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
@@ -373,22 +378,24 @@
 }
 
 .search-result-card {
-  background: linear-gradient(180deg, rgba(24, 24, 28, 0.95) 0%, rgba(18, 18, 22, 0.98) 100%);
+  background: linear-gradient(180deg, rgba(22, 27, 40, 0.96) 0%, rgba(15, 18, 28, 0.98) 100%);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  padding: 1.25rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  border-radius: var(--radius-xl);
+  padding: 1.35rem;
+  box-shadow: var(--shadow-md);
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
-  transition: all 0.2s ease;
+  transition: transform var(--sileo-duration) var(--sileo-spring-easing),
+              border-color 200ms ease,
+              box-shadow var(--sileo-duration) var(--sileo-spring-easing);
   position: relative;
 }
 
 .search-result-card:hover {
-  border-color: rgba(99, 102, 241, 0.35);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
-  transform: translateY(-1px);
+  transform: translateY(-3px) scale(1.004);
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 18px 44px -8px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(99, 102, 241, 0.25);
 }
 
 .search-result-card-header {
@@ -506,20 +513,25 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 4px 9px;
+  padding: 5px 12px;
   font-size: 0.72rem;
   font-weight: 500;
-  border-radius: 7px;
+  border-radius: var(--radius-full);
   background: rgba(255, 255, 255, 0.05);
   color: #d4d4d8;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all var(--sileo-duration) var(--sileo-spring-easing);
 }
 
 .btn-passage-action:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.btn-passage-action:active {
+  transform: scale(0.96);
 }
 
 /* ==========================================================================

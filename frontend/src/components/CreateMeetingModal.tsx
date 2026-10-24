@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { X, Video, Calendar, ShieldCheck } from 'lucide-react';
 import { meetingService, type Meeting } from '../services/meetingService';
 import { extractErrorMessage } from '../services/api';
+import { SelectBox } from './ui/select';
+import { toast } from '../utils/toast';
 
 interface CreateMeetingModalProps {
   workspaceId: string;
@@ -37,6 +39,7 @@ export const CreateMeetingModal: React.FC<CreateMeetingModalProps> = ({
     e.preventDefault();
     if (!title.trim()) {
       setError('Please enter a meeting title.');
+      toast.warning('Title Required', 'Please enter a meeting title.');
       return;
     }
 
@@ -46,11 +49,13 @@ export const CreateMeetingModal: React.FC<CreateMeetingModalProps> = ({
     if (mode === 'scheduled') {
       if (!scheduledDate || !scheduledTime) {
         setError('Please select both a scheduled date and start time.');
+        toast.warning('Schedule Incomplete', 'Please select both a scheduled date and start time.');
         return;
       }
       const start = new Date(`${scheduledDate}T${scheduledTime}`);
       if (isNaN(start.getTime())) {
         setError('Invalid scheduled date or time.');
+        toast.error('Invalid Date/Time', 'The selected date or time is invalid.');
         return;
       }
       scheduledStartIso = start.toISOString();
@@ -70,10 +75,16 @@ export const CreateMeetingModal: React.FC<CreateMeetingModalProps> = ({
         scheduled_end: scheduledEndIso,
         recording_consent: recordingConsent,
       });
+      toast.success(
+        mode === 'instant' ? 'Meeting Ready' : 'Meeting Scheduled',
+        mode === 'instant' ? 'Instant meeting created. Entering room...' : `Scheduled for ${scheduledDate} at ${scheduledTime}`
+      );
       onMeetingCreated(res.data);
       onClose();
     } catch (err: any) {
-      setError(extractErrorMessage(err, 'Failed to create meeting. Please try again.'));
+      const msg = extractErrorMessage(err, 'Failed to create meeting. Please try again.');
+      setError(msg);
+      toast.error('Creation Failed', msg);
     } finally {
       setLoading(false);
     }
@@ -190,19 +201,16 @@ export const CreateMeetingModal: React.FC<CreateMeetingModalProps> = ({
                 <label className="field-label" htmlFor="meeting-project-select">
                   Attach to Project
                 </label>
-                <select
+                <SelectBox
                   id="meeting-project-select"
                   value={projectId}
-                  onChange={(e) => setProjectId(e.target.value)}
-                  className="field-select"
-                >
-                  <option value="">No Project (Workspace-wide)</option>
-                  {projects.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
+                  onValueChange={setProjectId}
+                  placeholder="No Project (Workspace-wide)"
+                  options={[
+                    { value: '', label: 'No Project (Workspace-wide)' },
+                    ...projects.map((p) => ({ value: p.id, label: p.name })),
+                  ]}
+                />
               </div>
             )}
 
@@ -241,18 +249,18 @@ export const CreateMeetingModal: React.FC<CreateMeetingModalProps> = ({
                   <label className="field-label" htmlFor="meeting-duration-select">
                     Duration
                   </label>
-                  <select
+                  <SelectBox
                     id="meeting-duration-select"
-                    value={durationMinutes}
-                    onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                    className="field-select"
-                  >
-                    <option value={15}>15 minutes (Quick Standup)</option>
-                    <option value={30}>30 minutes</option>
-                    <option value={45}>45 minutes</option>
-                    <option value={60}>1 hour</option>
-                    <option value={90}>1.5 hours</option>
-                  </select>
+                    value={String(durationMinutes)}
+                    onValueChange={(val) => setDurationMinutes(Number(val))}
+                    options={[
+                      { value: '15', label: '15 minutes (Quick Standup)' },
+                      { value: '30', label: '30 minutes' },
+                      { value: '45', label: '45 minutes' },
+                      { value: '60', label: '1 hour' },
+                      { value: '90', label: '1.5 hours' },
+                    ]}
+                  />
                 </div>
               </>
             )}

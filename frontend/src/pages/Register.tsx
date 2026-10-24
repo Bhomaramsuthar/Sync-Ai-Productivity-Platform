@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { Sparkles } from 'lucide-react';
+import { toast } from '../utils/toast';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -18,11 +19,13 @@ const Register = () => {
     
     if (password !== confirmPassword) {
       setError('Passwords do not match');
+      toast.warning('Password Mismatch', 'Passwords do not match. Please re-enter.');
       return;
     }
     
     if (password.length < 6) {
       setError('Password must be at least 6 characters long');
+      toast.warning('Password Too Short', 'Password must be at least 6 characters long.');
       return;
     }
 
@@ -30,9 +33,12 @@ const Register = () => {
 
     try {
       await api.post('/auth/register', { name, email, password });
+      toast.success('Account Created', 'Registration successful! Please sign in.');
       navigate('/login');
     } catch (err: any) {
-      setError(err.response?.data?.detail?.error?.message || 'Registration failed. Please try again.');
+      const msg = err.response?.data?.detail?.error?.message || 'Registration failed. Please try again.';
+      setError(msg);
+      toast.error('Registration Failed', msg);
     } finally {
       setIsLoading(false);
     }

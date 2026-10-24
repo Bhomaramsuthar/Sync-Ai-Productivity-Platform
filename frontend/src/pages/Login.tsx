@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { Sparkles } from 'lucide-react';
+import { toast } from '../utils/toast';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -18,9 +19,12 @@ const Login = () => {
 
     try {
       const response = await api.post('/auth/login', { email, password });
+      toast.success('Welcome Back', `Logged in as ${response.data.user.name || email}`);
       login(response.data.access_token, response.data.user);
     } catch (err: any) {
-      setError(err.response?.data?.detail?.error?.message || 'Login failed. Please check your credentials.');
+      const msg = err.response?.data?.detail?.error?.message || 'Login failed. Please check your credentials.';
+      setError(msg);
+      toast.error('Login Failed', msg);
     } finally {
       setIsLoading(false);
     }

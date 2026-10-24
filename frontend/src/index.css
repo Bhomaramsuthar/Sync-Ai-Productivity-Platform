@@ -1,50 +1,114 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import './components/ui/select.css';
 
 :root {
-  /* Surface & Base Colors - Modern Dark Charcoal Theme */
-  --bg-base: #09090b;
-  --bg-surface: #141418;
-  --bg-surface-hover: #1c1c22;
-  --bg-surface-active: #272730;
-  --bg-surface-glass: rgba(20, 20, 24, 0.85);
+  /* -------------------------------------------------------------------------- */
+  /* Sileo Spring Motion & Timing                                               */
+  /* -------------------------------------------------------------------------- */
+  --sileo-spring-easing: linear(
+    0,
+    0.002 0.6%,
+    0.007 1.2%,
+    0.015 1.8%,
+    0.026 2.4%,
+    0.041 3.1%,
+    0.06 3.8%,
+    0.108 5.3%,
+    0.157 6.6%,
+    0.214 8%,
+    0.467 13.7%,
+    0.577 16.3%,
+    0.631 17.7%,
+    0.682 19.1%,
+    0.73 20.5%,
+    0.771 21.8%,
+    0.808 23.1%,
+    0.844 24.5%,
+    0.874 25.8%,
+    0.903 27.2%,
+    0.928 28.6%,
+    0.952 30.1%,
+    0.972 31.6%,
+    0.988 33.1%,
+    1.01 35.7%,
+    1.025 38.5%,
+    1.034 41.6%,
+    1.038 45%,
+    1.035 50.1%,
+    1.012 64.2%,
+    1.003 73%,
+    0.999 83.7%,
+    1
+  );
+  --sileo-spring-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --sileo-duration: 380ms;
+  --transition-sileo: all var(--sileo-duration) var(--sileo-spring-easing);
 
-  /* Borders */
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.14);
-  --border-glow: rgba(99, 102, 241, 0.35);
-  --border-color: rgba(255, 255, 255, 0.08);
+  /* -------------------------------------------------------------------------- */
+  /* Sileo Surface & Base Colors                                                */
+  /* -------------------------------------------------------------------------- */
+  --bg-base: #0b0d13;
+  --bg-surface: #131722;
+  --bg-surface-elevated: #181d2a;
+  --bg-surface-hover: #1d2334;
+  --bg-surface-active: #242c41;
+  --bg-surface-glass: rgba(19, 23, 34, 0.85);
 
-  /* Typography */
-  --text-primary: #fafafa;
-  --text-secondary: #a1a1aa;
-  --text-tertiary: #71717a;
-  --text-muted: #a1a1aa;
-  --text-main: #fafafa;
+  /* -------------------------------------------------------------------------- */
+  /* Sileo High-Fidelity State Tones                                            */
+  /* -------------------------------------------------------------------------- */
+  --sileo-state-success: #10b981;
+  --sileo-state-loading: #71717a;
+  --sileo-state-error: #f43f5e;
+  --sileo-state-warning: #f59e0b;
+  --sileo-state-info: #0ea5e9;
+  --sileo-state-action: #6366f1;
 
-  /* Accents & Brand */
-  --accent-primary: #6366f1; /* Indigo */
+  --status-success: var(--sileo-state-success);
+  --status-warning: var(--sileo-state-warning);
+  --status-danger: var(--sileo-state-error);
+  --status-info: var(--sileo-state-info);
+
+  --status-success-bg: rgba(16, 185, 129, 0.14);
+  --status-warning-bg: rgba(245, 158, 11, 0.14);
+  --status-danger-bg: rgba(244, 63, 94, 0.14);
+  --status-info-bg: rgba(14, 165, 233, 0.14);
+
+  --danger-color: var(--sileo-state-error);
+  --success-color: var(--sileo-state-success);
+
+  /* -------------------------------------------------------------------------- */
+  /* Accents & Brand                                                            */
+  /* -------------------------------------------------------------------------- */
+  --accent-primary: #6366f1;
   --accent-primary-hover: #4f46e5;
   --accent-primary-active: #4338ca;
-  --accent-primary-alpha: rgba(99, 102, 241, 0.15);
+  --accent-primary-alpha: rgba(99, 102, 241, 0.16);
   --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   --primary-color: #6366f1;
   --primary-color-rgb: 99, 102, 241;
-  --accent-color: #3b82f6;
+  --accent-color: #38bdf8;
 
-  /* Status Colors */
-  --status-success: #10b981;
-  --status-warning: #f59e0b;
-  --status-danger: #ef4444;
-  --status-info: #3b82f6;
-  --danger-color: #ef4444;
-  --success-color: #10b981;
+  /* -------------------------------------------------------------------------- */
+  /* Borders & Specular Highlights                                              */
+  /* -------------------------------------------------------------------------- */
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.13);
+  --border-glow: rgba(99, 102, 241, 0.35);
+  --border-color: rgba(255, 255, 255, 0.08);
 
-  --status-success-bg: rgba(16, 185, 129, 0.15);
-  --status-warning-bg: rgba(245, 158, 11, 0.15);
-  --status-danger-bg: rgba(239, 68, 68, 0.15);
-  --status-info-bg: rgba(59, 130, 246, 0.15);
+  /* -------------------------------------------------------------------------- */
+  /* Typography                                                                 */
+  /* -------------------------------------------------------------------------- */
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-tertiary: #64748b;
+  --text-muted: #94a3b8;
+  --text-main: #f8fafc;
 
-  /* Spacing */
+  /* -------------------------------------------------------------------------- */
+  /* Spacing                                                                    */
+  /* -------------------------------------------------------------------------- */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -53,23 +117,32 @@
   --space-6: 2rem;
   --space-8: 3rem;
 
-  /* Radii */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
+  /* -------------------------------------------------------------------------- */
+  /* Sileo Continuous Corner Radii                                              */
+  /* -------------------------------------------------------------------------- */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 26px;
   --radius-full: 9999px;
 
-  /* Multi-layered Ambient Shadows */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 8px 24px -4px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 16px 40px -8px rgba(0, 0, 0, 0.65);
-  --shadow-glow: 0 0 24px rgba(99, 102, 241, 0.25);
+  /* -------------------------------------------------------------------------- */
+  /* Sileo Multi-layered Ambient Shadows                                        */
+  /* -------------------------------------------------------------------------- */
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 12px 30px -6px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-lg: 0 20px 48px -10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --shadow-glow: 0 0 30px rgba(99, 102, 241, 0.28);
+  --shadow-pill: 0 6px 20px -2px rgba(0, 0, 0, 0.45);
 
-  /* Transitions */
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* -------------------------------------------------------------------------- */
+  /* Transitions                                                                */
+  /* -------------------------------------------------------------------------- */
+  --transition-fast: 160ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 260ms cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 
 /* Base Styles */
 * {
@@ -196,10 +269,10 @@ a:hover {
   background-color: var(--bg-base);
 }
 
-/* Modern App Sidebar */
+/* Modern Sileo App Sidebar */
 .app-sidebar {
   width: 260px;
-  background-color: #111116;
+  background-color: #0d1017;
   border-right: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
@@ -232,40 +305,84 @@ a:hover {
 .app-sidebar-footer {
   padding: var(--space-4) var(--space-3);
   border-top: 1px solid var(--border-subtle);
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.25);
 }
 
 .sidebar-nav-item {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.65rem 0.95rem;
+  padding: 0.65rem 1.15rem;
   color: var(--text-secondary);
   font-size: 0.85rem;
   font-weight: 500;
-  border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  border-radius: var(--radius-full);
+  transition: all var(--sileo-duration) var(--sileo-spring-easing);
   cursor: pointer;
   text-decoration: none;
 }
 
 .sidebar-nav-item:hover {
-  background-color: var(--bg-surface-hover);
+  background-color: rgba(255, 255, 255, 0.06);
   color: var(--text-primary);
-  transform: translateX(2px);
+  transform: translateX(4px);
+}
+
+.sidebar-nav-item:active {
+  transform: scale(0.97);
 }
 
 .sidebar-nav-item.active {
-  background: rgba(99, 102, 241, 0.15);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.22) 0%, rgba(139, 92, 246, 0.16) 100%);
   color: #ffffff;
   font-weight: 600;
-  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.25);
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.35);
 }
 
 .sidebar-nav-item.active svg {
   color: #818cf8;
 }
+
+.sidebar-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.825rem;
+  font-weight: 500;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all var(--sileo-duration) var(--sileo-spring-easing);
+  text-decoration: none;
+}
+
+.sidebar-logout-btn:hover {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.28);
+  color: #fca5a5;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.15);
+  transform: translateX(3px);
+}
+
+.sidebar-logout-btn svg {
+  color: #71717a;
+  transition: all 0.2s ease;
+}
+
+.sidebar-logout-btn:hover svg {
+  color: #ef4444;
+  transform: scale(1.08);
+}
+
+.sidebar-logout-btn:active {
+  transform: scale(0.97);
+}
+
 
 /* Main Content Area */
 .app-main {
@@ -325,37 +442,38 @@ a:hover {
   line-height: 1.45;
 }
 
-/* Universal Modern Hero Banner */
+/* Universal Modern Sileo Hero Banner */
 .page-hero-banner {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 1.25rem;
-  padding: 1.5rem 1.75rem;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(20, 20, 24, 0.95) 50%, rgba(35, 35, 40, 0.7) 100%);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.5);
+  padding: 1.6rem 1.85rem;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(19, 23, 34, 0.95) 55%, rgba(24, 29, 42, 0.9) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.65), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
   margin-bottom: var(--space-6);
 }
 
 .page-hero-info {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.15rem;
 }
 
 .page-hero-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  width: 50px;
+  height: 50px;
+  border-radius: 16px;
   background: rgba(99, 102, 241, 0.18);
   color: #818cf8;
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
   flex-shrink: 0;
 }
 
@@ -383,69 +501,80 @@ a:hover {
 }
 
 /* ==========================================================================
-   Modern SaaS Buttons
+   Sileo Tactile Spring Capsule Buttons
    ========================================================================== */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  padding: 0.55rem 1.15rem;
+  padding: 0.55rem 1.25rem;
   font-size: 0.8125rem;
   font-weight: 600;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: transform var(--sileo-duration) var(--sileo-spring-easing),
+              box-shadow var(--sileo-duration) var(--sileo-spring-easing),
+              background-color 200ms ease,
+              border-color 200ms ease,
+              color 200ms ease;
   white-space: nowrap;
   letter-spacing: -0.01em;
+  user-select: none;
 }
 
 .btn:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.96) !important;
 }
 
 .btn-primary {
   background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
   color: #ffffff;
-  border: none;
-  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 4px 16px -2px rgba(99, 102, 241, 0.45), inset 0 1px 0 0 rgba(255, 255, 255, 0.25);
 }
 
 .btn-primary:hover:not(:disabled) {
   background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
-  transform: translateY(-1px);
-}
-
-.btn-primary:active:not(:disabled) {
-  transform: translateY(0);
+  box-shadow: 0 8px 24px -2px rgba(99, 102, 241, 0.65), inset 0 1px 0 0 rgba(255, 255, 255, 0.35);
+  transform: scale(1.02) translateY(-1px);
 }
 
 .btn-secondary {
-  background: #1f1f25;
+  background: rgba(255, 255, 255, 0.05);
   color: #fafafa;
-  border: 1px solid var(--border-strong);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: #272730;
-  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.22);
   color: #ffffff;
+  transform: scale(1.02) translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
 }
 
 .btn-danger {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(244, 63, 94, 0.14);
+  color: #fb7185;
+  border: 1px solid rgba(244, 63, 94, 0.32);
 }
 
 .btn-danger:hover:not(:disabled) {
-  background: #ef4444;
+  background: #f43f5e;
   color: #ffffff;
-  border-color: #dc2626;
-  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);
+  border-color: #e11d48;
+  box-shadow: 0 6px 20px rgba(244, 63, 94, 0.45);
+  transform: scale(1.02) translateY(-1px);
 }
 
 .btn-ghost {
@@ -457,36 +586,38 @@ a:hover {
 .btn-ghost:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.06);
   color: #ffffff;
+  transform: scale(1.02);
 }
 
 .btn-icon {
   padding: 0.5rem;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   aspect-ratio: 1 / 1;
-  min-width: 32px;
-  min-height: 32px;
+  min-width: 34px;
+  min-height: 34px;
 }
 
 /* Button Sizing System */
 .btn-sm {
-  padding: 0.35rem 0.75rem;
+  padding: 0.35rem 0.85rem;
   font-size: 0.75rem;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
   gap: 0.35rem;
 }
 
 .btn-md {
-  padding: 0.55rem 1.15rem;
+  padding: 0.55rem 1.25rem;
   font-size: 0.8125rem;
+  border-radius: var(--radius-full);
 }
 
 .btn-lg {
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem 1.75rem;
   font-size: 0.95rem;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
 }
 
 .btn:focus-visible {
@@ -563,21 +694,23 @@ a:hover {
 }
 
 /* ==========================================================================
-   Modern SaaS Cards
+   Sileo Floating Surface Cards
    ========================================================================== */
 .card {
-  background: linear-gradient(180deg, rgba(20, 20, 24, 0.95) 0%, rgba(15, 15, 18, 0.98) 100%);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(22, 27, 40, 0.96) 0%, rgba(15, 18, 28, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-xl);
   overflow: hidden;
   box-shadow: var(--shadow-md);
-  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition: transform var(--sileo-duration) var(--sileo-spring-easing),
+              border-color 200ms ease,
+              box-shadow var(--sileo-duration) var(--sileo-spring-easing);
 }
 
 .card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(99, 102, 241, 0.35);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  transform: translateY(-3px) scale(1.004);
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 18px 44px -8px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(99, 102, 241, 0.25);
 }
 
 .card-header {
@@ -592,6 +725,7 @@ a:hover {
   font-size: 1.05rem;
   font-weight: 600;
   color: #ffffff;
+  letter-spacing: -0.01em;
 }
 
 .card-body {
@@ -605,48 +739,50 @@ a:hover {
 }
 
 /* ==========================================================================
-   Badges & Status Indicators
+   Sileo State Chips & Badges
    ========================================================================== */
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 0.2rem 0.65rem;
+  padding: 0.25rem 0.75rem;
   font-size: 0.72rem;
   font-weight: 600;
   border-radius: var(--radius-full);
   white-space: nowrap;
   letter-spacing: 0.02em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: all var(--transition-fast);
 }
 
 .badge-neutral {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: rgba(255, 255, 255, 0.07);
   color: var(--text-secondary);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.09);
 }
 
 .badge-primary {
-  background-color: rgba(99, 102, 241, 0.15);
+  background-color: rgba(99, 102, 241, 0.16);
   color: #a5b4fc;
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  border: 1px solid rgba(99, 102, 241, 0.35);
 }
 
 .badge-success {
   background-color: rgba(16, 185, 129, 0.15);
   color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid rgba(16, 185, 129, 0.32);
 }
 
 .badge-warning {
   background-color: rgba(245, 158, 11, 0.15);
   color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  border: 1px solid rgba(245, 158, 11, 0.32);
 }
 
 .badge-danger {
-  background-color: rgba(239, 68, 68, 0.15);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background-color: rgba(244, 63, 94, 0.15);
+  color: #fb7185;
+  border: 1px solid rgba(244, 63, 94, 0.32);
 }
 
 /* ==========================================================================
@@ -665,14 +801,14 @@ a:hover {
   padding: var(--space-4);
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  border-radius: var(--radius-lg);
+  transition: all var(--sileo-duration) var(--sileo-spring-easing);
 }
 
 .list-item:hover {
   border-color: rgba(99, 102, 241, 0.35);
   background-color: var(--bg-surface-hover);
-  transform: translateX(2px);
+  transform: translateX(4px);
 }
 
 .table-container {
@@ -723,8 +859,8 @@ a:hover {
   align-items: center;
   gap: var(--space-3);
   color: #fca5a5;
-  background-color: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  background-color: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.28);
   padding: 0.875rem 1.15rem;
   border-radius: var(--radius-md);
   font-size: 0.8125rem;
@@ -747,10 +883,10 @@ a:hover {
   width: 320px;
   display: flex;
   flex-direction: column;
-  background-color: rgba(20, 20, 24, 0.7);
-  border-radius: var(--radius-lg);
+  background-color: rgba(19, 23, 34, 0.65);
+  border-radius: var(--radius-xl);
   border: 1px solid var(--border-subtle);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
 }
 
 .kanban-column-header {
@@ -774,18 +910,21 @@ a:hover {
 }
 
 .kanban-task {
-  background: linear-gradient(180deg, rgba(24, 24, 28, 0.95) 0%, rgba(18, 18, 22, 0.98) 100%);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, rgba(27, 33, 48, 0.95) 0%, rgba(19, 23, 34, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
   padding: var(--space-4);
   cursor: grab;
-  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  transition: transform var(--sileo-duration) var(--sileo-spring-easing),
+              border-color 200ms ease,
+              box-shadow var(--sileo-duration) var(--sileo-spring-easing);
 }
 
 .kanban-task:hover {
-  transform: translateY(-2px);
-  border-color: rgba(99, 102, 241, 0.35);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px) scale(1.01);
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
 }
 
 .kanban-task:active {
@@ -840,9 +979,9 @@ a:hover {
   padding: var(--space-8);
   text-align: center;
   color: var(--text-secondary);
-  background: linear-gradient(180deg, rgba(20, 20, 24, 0.5) 0%, rgba(14, 14, 18, 0.8) 100%);
+  background: linear-gradient(180deg, rgba(22, 27, 40, 0.5) 0%, rgba(15, 18, 28, 0.8) 100%);
   border: 1px dashed var(--border-strong);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   gap: 0.75rem;
 }
 
@@ -875,23 +1014,23 @@ a:hover {
   align-items: center;
   justify-content: center;
   background-color: var(--bg-base);
-  background-image: radial-gradient(circle at top center, rgba(99, 102, 241, 0.12) 0%, transparent 60%);
+  background-image: radial-gradient(circle at top center, rgba(99, 102, 241, 0.14) 0%, transparent 60%);
   padding: var(--space-4);
 }
 
 .auth-card {
   width: 100%;
   max-width: 440px;
-  background: rgba(20, 20, 24, 0.95);
+  background: rgba(19, 23, 34, 0.95);
   backdrop-filter: blur(20px);
-  border: 1px solid var(--border-strong);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-xl);
   padding: 2.25rem;
-  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 28px 70px -12px rgba(0, 0, 0, 0.85), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
-  animation: modal-enter 0.2s ease-out;
+  animation: sileo-spring-modal-enter var(--sileo-duration) var(--sileo-spring-easing) forwards;
 }
 
 .auth-header {
@@ -919,41 +1058,52 @@ a:hover {
 }
 
 /* ==========================================================================
-   Modals
+   Sileo Spring Modals
    ========================================================================== */
 .modal-overlay {
   position: fixed;
   inset: 0;
   background-color: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: var(--space-4);
-  animation: fadeIn 0.15s ease-out;
+  animation: fadeIn 0.2s ease-out;
 }
 
 .modal-content {
-  background-color: #141418;
-  border: 1px solid var(--border-strong);
+  background-color: #131722;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-xl);
-  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.85);
+  box-shadow: 0 32px 80px -16px rgba(0, 0, 0, 0.9), inset 0 1px 0 0 rgba(255, 255, 255, 0.09);
   width: 100%;
   max-width: 720px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: modal-enter 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: sileo-spring-modal-enter var(--sileo-duration) var(--sileo-spring-easing) forwards;
+}
+
+@keyframes sileo-spring-modal-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 @keyframes modal-enter {
-  from {
+  0% {
     opacity: 0;
-    transform: scale(0.96) translateY(8px);
+    transform: scale(0.92) translateY(12px);
   }
-  to {
+  100% {
     opacity: 1;
     transform: scale(1) translateY(0);
   }
@@ -982,6 +1132,53 @@ a:hover {
   justify-content: flex-end;
   gap: var(--space-3);
   background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* ==========================================================================
+   Sileo Segmented Pill Tracks & Tabs
+   ========================================================================== */
+.segmented-pills-track {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-full);
+  padding: 4px;
+  gap: 4px;
+  backdrop-filter: blur(8px);
+}
+
+.segmented-pill-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  cursor: pointer;
+  transition: all var(--sileo-duration) var(--sileo-spring-easing);
+  white-space: nowrap;
+}
+
+.segmented-pill-item:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(-1px);
+}
+
+.segmented-pill-item:active {
+  transform: scale(0.96);
+}
+
+.segmented-pill-item.active {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 /* ==========================================================================
@@ -1045,3 +1242,34 @@ a:hover {
 .transition-all { transition: all var(--transition-fast); }
 .transition-colors { transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast); }
 
+/* -------------------------------------------------------------------------- */
+/* Sileo Toast Notifications Theme Integration                                */
+/* -------------------------------------------------------------------------- */
+[data-sileo-viewport] {
+  z-index: 99999 !important;
+  font-family: inherit;
+  top: 1rem !important;
+  right: 1rem !important;
+}
+
+[data-sileo-toast] {
+  filter: drop-shadow(0 14px 34px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 1px rgba(255, 255, 255, 0.1));
+}
+
+[data-sileo-title] {
+  font-family: inherit;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-size: 0.84rem;
+}
+
+[data-sileo-description] {
+  font-family: inherit;
+  color: #e2e8f0 !important;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+[data-sileo-button] {
+  font-family: inherit;
+}

@@ -18,7 +18,9 @@ import {
 } from 'lucide-react';
 import { extractErrorMessage } from '../services/api';
 import { useBreadcrumbs } from '../context/BreadcrumbContext';
+import { SelectBox } from '../components/ui/select';
 import { ThinkingLoader } from '../components/ThinkingLoader';
+import { toast } from '../utils/toast';
 
 const WorkspaceDetail: React.FC = () => {
   const { workspaceId } = useParams<{ workspaceId: string }>();
@@ -81,12 +83,15 @@ const WorkspaceDetail: React.FC = () => {
     setAddLoading(true);
     try {
       await memberService.add(workspaceId!, { email: addEmail, role: addRole });
+      toast.success('Member Added', `${addEmail} was added as ${addRole}.`);
       setAddEmail('');
       setAddRole('MEMBER');
       setShowAddMember(false);
       loadData();
     } catch (err: any) {
-      setAddError(extractErrorMessage(err, 'Failed to add member to workspace'));
+      const msg = extractErrorMessage(err, 'Failed to add member to workspace');
+      setAddError(msg);
+      toast.error('Failed to Add Member', msg);
     } finally {
       setAddLoading(false);
     }
@@ -95,9 +100,10 @@ const WorkspaceDetail: React.FC = () => {
   const handleChangeRole = async (userId: string, newRole: string) => {
     try {
       await memberService.updateRole(workspaceId!, userId, { role: newRole });
+      toast.success('Role Updated', `Member role changed to ${newRole}`);
       loadData();
     } catch (err: any) {
-      alert(extractErrorMessage(err, 'Failed to update member role'));
+      toast.error('Role Update Failed', extractErrorMessage(err, 'Failed to update member role'));
     }
   };
 
@@ -105,9 +111,10 @@ const WorkspaceDetail: React.FC = () => {
     if (!confirm(`Are you sure you want to remove ${name} from this workspace?`)) return;
     try {
       await memberService.remove(workspaceId!, userId);
+      toast.success('Member Removed', `${name} has been removed from this workspace.`);
       loadData();
     } catch (err: any) {
-      alert(extractErrorMessage(err, 'Failed to remove member'));
+      toast.error('Failed to Remove Member', extractErrorMessage(err, 'Failed to remove member'));
     }
   };
 
@@ -115,10 +122,11 @@ const WorkspaceDetail: React.FC = () => {
     e.preventDefault();
     try {
       await workspaceService.update(workspaceId!, { name: editName, description: editDesc });
+      toast.success('Workspace Updated', 'Workspace details saved successfully.');
       setEditing(false);
       loadData();
     } catch (err: any) {
-      alert(extractErrorMessage(err, 'Failed to update workspace'));
+      toast.error('Failed to Update Workspace', extractErrorMessage(err, 'Failed to update workspace'));
     }
   };
 
@@ -127,9 +135,10 @@ const WorkspaceDetail: React.FC = () => {
       return;
     try {
       await workspaceService.delete(workspaceId!);
+      toast.success('Workspace Deleted', 'The workspace has been removed.');
       navigate('/workspaces');
     } catch (err: any) {
-      alert(extractErrorMessage(err, 'Failed to delete workspace'));
+      toast.error('Failed to Delete Workspace', extractErrorMessage(err, 'Failed to delete workspace'));
     }
   };
 
@@ -268,15 +277,16 @@ const WorkspaceDetail: React.FC = () => {
                     required
                     style={{ flex: 1, minWidth: 200 }}
                   />
-                  <select
-                    className="form-select"
-                    value={addRole}
-                    onChange={(e) => setAddRole(e.target.value)}
-                    style={{ width: 130 }}
-                  >
-                    <option value="MEMBER">Member</option>
-                    <option value="ADMIN">Admin</option>
-                  </select>
+                  <div style={{ width: 130 }}>
+                    <SelectBox
+                      value={addRole}
+                      onValueChange={(val) => setAddRole(val)}
+                      options={[
+                        { value: 'MEMBER', label: 'Member' },
+                        { value: 'ADMIN', label: 'Admin' },
+                      ]}
+                    />
+                  </div>
                   <button
                     type="submit"
                     disabled={addLoading}
@@ -334,15 +344,17 @@ const WorkspaceDetail: React.FC = () => {
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   {canManage && m.user_id !== user?.id && m.role !== 'OWNER' ? (
-                    <select
-                      className="form-select"
-                      style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', width: 110 }}
-                      value={m.role}
-                      onChange={(e) => handleChangeRole(m.user_id, e.target.value)}
-                    >
-                      <option value="MEMBER">Member</option>
-                      <option value="ADMIN">Admin</option>
-                    </select>
+                    <div style={{ width: 110 }}>
+                      <SelectBox
+                        size="sm"
+                        value={m.role}
+                        onValueChange={(val) => handleChangeRole(m.user_id, val)}
+                        options={[
+                          { value: 'MEMBER', label: 'Member' },
+                          { value: 'ADMIN', label: 'Admin' },
+                        ]}
+                      />
+                    </div>
                   ) : (
                     <span className={roleBadgeClass(m.role)}>{m.role}</span>
                   )}

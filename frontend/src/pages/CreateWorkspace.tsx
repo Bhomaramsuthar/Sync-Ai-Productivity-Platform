@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { workspaceService } from '../services/workspaceService';
 import { ArrowLeft, Briefcase } from 'lucide-react';
+import { toast } from '../utils/toast';
 
 const CreateWorkspace = () => {
   const [name, setName] = useState('');
@@ -13,13 +14,20 @@ const CreateWorkspace = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!name.trim()) { setError('Workspace name is required'); return; }
+    if (!name.trim()) {
+      setError('Workspace name is required');
+      toast.warning('Name Required', 'Please enter a workspace name.');
+      return;
+    }
     setIsLoading(true);
     try {
       const res = await workspaceService.create({ name: name.trim(), description: description.trim() || undefined });
+      toast.success('Workspace Created', `Workspace "${name.trim()}" is ready.`);
       navigate(`/workspaces/${res.data.id}`);
     } catch (err: any) {
-      setError(err.response?.data?.detail?.error?.message || 'Failed to create workspace');
+      const msg = err.response?.data?.detail?.error?.message || 'Failed to create workspace';
+      setError(msg);
+      toast.error('Creation Failed', msg);
     } finally {
       setIsLoading(false);
     }

@@ -100,8 +100,10 @@ from app.rag.router import router as rag_router
 from app.ai.router import router as ai_router
 from app.calendar.router import router as calendar_router
 from app.meetings.router import router as meeting_router
+from app.users.router import router as user_router
 
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
+app.include_router(user_router, prefix="/api/v1/users", tags=["users"])
 app.include_router(workspace_router, prefix="/api/v1/workspaces", tags=["workspaces"])
 app.include_router(project_router, prefix="/api/v1", tags=["projects"])
 app.include_router(task_router, prefix="/api/v1", tags=["tasks"])

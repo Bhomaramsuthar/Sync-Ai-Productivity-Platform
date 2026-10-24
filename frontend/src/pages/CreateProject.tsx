@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { projectService } from '../services/projectService';
 import { ArrowLeft, FolderKanban } from 'lucide-react';
+import { toast } from '../utils/toast';
 
 const CreateProject = () => {
   const { workspaceId } = useParams<{ workspaceId: string }>();
@@ -13,14 +14,22 @@ const CreateProject = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim()) {
+      setError('Project name is required');
+      toast.warning('Name Required', 'Please enter a project name.');
+      return;
+    }
     setLoading(true);
     setError('');
     
     try {
-      const res = await projectService.create(workspaceId!, { name, description });
+      const res = await projectService.create(workspaceId!, { name: name.trim(), description: description.trim() || undefined });
+      toast.success('Project Created', `Project "${name.trim()}" is ready.`);
       navigate(`/projects/${res.data.id}`);
     } catch (err: any) {
-      setError(err.response?.data?.detail?.error?.message || 'Failed to create project');
+      const msg = err.response?.data?.detail?.error?.message || 'Failed to create project';
+      setError(msg);
+      toast.error('Creation Failed', msg);
     } finally {
       setLoading(false);
     }

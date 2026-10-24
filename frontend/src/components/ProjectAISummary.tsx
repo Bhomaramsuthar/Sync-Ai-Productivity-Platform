@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import './ProjectAISummary.css';
 import { ThinkingLoader } from './ThinkingLoader';
+import { toast } from '../utils/toast';
 
 interface Props {
   projectId: string;
@@ -63,12 +64,15 @@ export const ProjectAISummary: React.FC<Props> = ({ projectId, onNavigateToTasks
     try {
       const res = await productivityService.getSummary(projectId);
       setSummary(res.data);
+      toast.success('AI Summary Generated', 'Executive project health summary is ready.');
     } catch (err: any) {
       if (err.response?.status === 503) {
         setProviderNotConfigured(true);
+        toast.error('AI Unavailable', 'AI provider not configured in backend/.env');
       } else {
         const msg = err.response?.data?.detail?.error?.message || 'Failed to generate project summary.';
         setSummaryError(msg);
+        toast.error('Summary Failed', msg);
       }
     } finally {
       setLoadingSummary(false);

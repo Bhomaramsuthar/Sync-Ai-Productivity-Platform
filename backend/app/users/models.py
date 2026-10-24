@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Enum
+from sqlalchemy import Column, String, DateTime, Enum, Text
 from sqlalchemy.sql import func
 import uuid
 import enum
@@ -16,5 +16,25 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     role = Column(Enum(RoleEnum), default=RoleEnum.USER, nullable=False)
+    avatar_url = Column(String(1024), nullable=True)
+    preferences_json = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    @property
+    def preferences(self) -> dict:
+        import json
+        if not self.preferences_json:
+            return {}
+        try:
+            return json.loads(self.preferences_json)
+        except Exception:
+            return {}
+
+    @preferences.setter
+    def preferences(self, value: dict | None):
+        import json
+        if value is None:
+            self.preferences_json = None
+        else:
+            self.preferences_json = json.dumps(value)

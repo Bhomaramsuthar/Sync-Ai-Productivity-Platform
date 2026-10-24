@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import './DocumentLibrary.css';
 import { ThinkingLoader } from '../components/ThinkingLoader';
+import { SelectBox } from '../components/ui/select';
+import { toast } from '../utils/toast';
 
 const SUGGESTED_PROMPTS = [
   { label: 'System architecture & stack', query: 'What are the system architecture components and technology stack?' },
@@ -106,16 +108,17 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
 
     // Check size limit (10MB)
     if (file.size > 10 * 1024 * 1024) {
-      alert("File is too large. Maximum size is 10MB.");
+      toast.warning('File Too Large', 'Maximum file size allowed is 10MB.');
       return;
     }
 
     setUploading(true);
     try {
       await documentService.upload(project.id, file);
+      toast.success('Document Uploaded', `${file.name} uploaded successfully and queued for indexing.`);
       await loadDocuments(false);
     } catch (err: any) {
-      alert(err.response?.data?.detail?.error?.message || "Failed to upload document");
+      toast.error('Upload Failed', err.response?.data?.detail?.error?.message || 'Failed to upload document');
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -125,11 +128,13 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
   const handleRetryExtraction = async (docId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setRetryingId(docId);
+    toast.info('Retrying Extraction', 'Restarting document text extraction...');
     try {
       await documentService.retry(docId);
+      toast.success('Extraction Retried', 'Text extraction initiated.');
       await loadDocuments(false);
     } catch (err: any) {
-      alert(err.response?.data?.detail?.error?.message || "Failed to retry document processing");
+      toast.error('Extraction Retry Failed', err.response?.data?.detail?.error?.message || 'Failed to retry document processing');
     } finally {
       setRetryingId(null);
     }
@@ -138,11 +143,13 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
   const handleRetryIndexing = async (docId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setRetryingIndexId(docId);
+    toast.info('Retrying Indexing', 'Regenerating vector embeddings for document...');
     try {
       await documentService.retryIndexing(docId);
+      toast.success('Indexing Retried', 'Vector embedding generation initiated.');
       await loadDocuments(false);
     } catch (err: any) {
-      alert(err.response?.data?.detail?.error?.message || "Failed to retry document indexing");
+      toast.error('Indexing Retry Failed', err.response?.data?.detail?.error?.message || 'Failed to retry document indexing');
     } finally {
       setRetryingIndexId(null);
     }
@@ -153,6 +160,7 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
     if (!confirm('Are you sure you want to delete this document? All associated vector embeddings will also be removed.')) return;
     try {
       await documentService.delete(id);
+      toast.success('Document Deleted', 'Document and associated vector embeddings removed.');
       await loadDocuments(false);
       if (previewDoc?.id === id) {
         setPreviewDoc(null);
@@ -160,7 +168,7 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
         setChunksList([]);
       }
     } catch (err: any) {
-      alert(err.response?.data?.detail?.error?.message || "Failed to delete document");
+      toast.error('Delete Failed', err.response?.data?.detail?.error?.message || 'Failed to delete document');
     }
   };
 
@@ -171,10 +179,10 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
       if (res.data.download_url) {
         window.open(res.data.download_url, '_blank');
       } else {
-        alert("Download URL not available");
+        toast.error('Download Unavailable', 'Download URL is not available for this document.');
       }
     } catch (err: any) {
-      alert("Failed to get download link");
+      toast.error('Download Error', 'Failed to retrieve download link.');
     }
   };
 
@@ -224,7 +232,7 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
       const res = await documentService.get(docId);
       openPreview(res.data, initialTab);
     } catch (err) {
-      alert("Failed to load document content.");
+      toast.error('Preview Failed', 'Failed to load document content.');
     }
   };
 
@@ -336,6 +344,7 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
   const handleCopyPassage = (item: SemanticSearchResultItem) => {
     navigator.clipboard.writeText(item.content);
     setCopiedPassageId(item.chunk_id);
+    toast.info('Passage Copied', 'Semantic snippet copied to clipboard.');
     setTimeout(() => setCopiedPassageId(null), 2000);
   };
 
@@ -371,6 +380,7 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
     if (!previewData?.extracted_text) return;
     navigator.clipboard.writeText(previewData.extracted_text);
     setCopied(true);
+    toast.info('Text Copied', 'Full document text copied to clipboard.');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -572,36 +582,38 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
             <div className="doc-filter-group">
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <SlidersHorizontal size={13} color="#71717a" />
-                <select
-                  className="form-select text-xs py-1 px-2"
-                  value={statusFilter}
-                  onChange={e => setStatusFilter(e.target.value as any)}
-                  aria-label="Filter by Status"
-                  id="doc-status-filter"
-                  style={{ minWidth: 120 }}
-                >
-                  <option value="ALL">All Status</option>
-                  <option value="READY">Ready</option>
-                  <option value="PROCESSING">Processing</option>
-                  <option value="FAILED">Needs Attention</option>
-                </select>
+                <div style={{ minWidth: 135 }}>
+                  <SelectBox
+                    size="sm"
+                    value={statusFilter}
+                    onValueChange={val => setStatusFilter(val as any)}
+                    id="doc-status-filter"
+                    options={[
+                      { value: 'ALL', label: 'All Status' },
+                      { value: 'READY', label: 'Ready' },
+                      { value: 'PROCESSING', label: 'Processing' },
+                      { value: 'FAILED', label: 'Needs Attention' },
+                    ]}
+                  />
+                </div>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <ArrowUpDown size={13} color="#71717a" />
-                <select
-                  className="form-select text-xs py-1 px-2"
-                  value={sortBy}
-                  onChange={e => setSortBy(e.target.value as any)}
-                  aria-label="Sort Documents"
-                  id="doc-sort-select"
-                  style={{ minWidth: 125 }}
-                >
-                  <option value="newest">Newest First</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="name">Name (A-Z)</option>
-                  <option value="size">File Size</option>
-                </select>
+                <div style={{ minWidth: 140 }}>
+                  <SelectBox
+                    size="sm"
+                    value={sortBy}
+                    onValueChange={val => setSortBy(val as any)}
+                    id="doc-sort-select"
+                    options={[
+                      { value: 'newest', label: 'Newest First' },
+                      { value: 'oldest', label: 'Oldest First' },
+                      { value: 'name', label: 'Name (A-Z)' },
+                      { value: 'size', label: 'File Size' },
+                    ]}
+                  />
+                </div>
               </div>
 
               {/* View Mode Toggle: Grid vs Table */}
@@ -925,32 +937,38 @@ export const DocumentLibrary = ({ project }: { project: Project }) => {
               <div className="semantic-settings-group">
                 <div className="semantic-setting-item">
                   <label htmlFor="semantic-precision-select" style={{ fontWeight: 600 }}>Precision:</label>
-                  <select
-                    id="semantic-precision-select"
-                    className="form-select text-xs py-1 px-2"
-                    value={semanticSensitivity}
-                    onChange={e => setSemanticSensitivity(e.target.value as any)}
-                    disabled={semanticLoading}
-                  >
-                    <option value="balanced">Balanced (Recommended)</option>
-                    <option value="strict">High Precision (Strict)</option>
-                    <option value="permissive">Broad Search (Permissive)</option>
-                  </select>
+                  <div style={{ minWidth: 190 }}>
+                    <SelectBox
+                      size="sm"
+                      id="semantic-precision-select"
+                      value={semanticSensitivity}
+                      onValueChange={val => setSemanticSensitivity(val as any)}
+                      disabled={semanticLoading}
+                      options={[
+                        { value: 'balanced', label: 'Balanced (Recommended)' },
+                        { value: 'strict', label: 'High Precision (Strict)' },
+                        { value: 'permissive', label: 'Broad Search (Permissive)' },
+                      ]}
+                    />
+                  </div>
                 </div>
 
                 <div className="semantic-setting-item">
                   <label htmlFor="semantic-limit-select" style={{ fontWeight: 600 }}>Results:</label>
-                  <select
-                    id="semantic-limit-select"
-                    className="form-select text-xs py-1 px-2"
-                    value={semanticLimit}
-                    onChange={e => setSemanticLimit(Number(e.target.value))}
-                    disabled={semanticLoading}
-                  >
-                    <option value={3}>Top 3</option>
-                    <option value={5}>Top 5</option>
-                    <option value={10}>Top 10</option>
-                  </select>
+                  <div style={{ minWidth: 110 }}>
+                    <SelectBox
+                      size="sm"
+                      id="semantic-limit-select"
+                      value={String(semanticLimit)}
+                      onValueChange={val => setSemanticLimit(Number(val))}
+                      disabled={semanticLoading}
+                      options={[
+                        { value: '3', label: 'Top 3' },
+                        { value: '5', label: 'Top 5' },
+                        { value: '10', label: 'Top 10' },
+                      ]}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

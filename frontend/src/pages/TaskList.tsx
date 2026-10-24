@@ -5,7 +5,9 @@ import { memberService, type Member } from '../services/workspaceService';
 import { Plus, Search, Edit2, Trash2, Eye, Sparkles, ListTree } from 'lucide-react';
 import { TaskDetailModal } from '../components/TaskDetailModal';
 import { AITaskAssistantModal } from '../components/AITaskAssistantModal';
+import { SelectBox } from '../components/ui/select';
 import { productivityService } from '../services/productivityService';
+import { toast } from '../utils/toast';
 
 const TaskList = ({ project }: { project: Project }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -56,7 +58,7 @@ const TaskList = ({ project }: { project: Project }) => {
 
   const handleAutoDraftDescription = async () => {
     if (!formData.title.trim()) {
-      alert('Please enter a task title first so AI can draft the description.');
+      toast.warning('Title Required', 'Please enter a task title first so AI can draft the description.');
       return;
     }
     setExpandingDescription(true);
@@ -77,11 +79,12 @@ const TaskList = ({ project }: { project: Project }) => {
         priority: data.suggested_priority || prev.priority,
       }));
       setAiNotice('✨ AI drafted description & acceptance criteria! You can review or edit before saving.');
+      toast.success('Description Drafted', 'AI successfully generated task description and acceptance criteria.');
     } catch (err: any) {
       if (err.response?.status === 503) {
-        alert('AI Provider is not configured in backend/.env. Please configure LLM_API_KEY or GROQ_API_KEY.');
+        toast.error('AI Unavailable', 'AI Provider is not configured in backend/.env. Please configure LLM_API_KEY or GROQ_API_KEY.');
       } else {
-        alert(err.response?.data?.detail?.error?.message || 'Failed to auto-draft description.');
+        toast.error('Draft Failed', err.response?.data?.detail?.error?.message || 'Failed to auto-draft description.');
       }
     } finally {
       setExpandingDescription(false);
@@ -90,7 +93,7 @@ const TaskList = ({ project }: { project: Project }) => {
 
   const handleSuggestPriority = async () => {
     if (!formData.title.trim()) {
-      alert('Please enter a task title first.');
+      toast.warning('Title Required', 'Please enter a task title first.');
       return;
     }
     setSuggestingPriority(true);
@@ -102,8 +105,9 @@ const TaskList = ({ project }: { project: Project }) => {
       });
       setFormData(prev => ({ ...prev, priority: res.data.suggested_priority }));
       setAiNotice(`🎯 Priority set to ${res.data.suggested_priority}: ${res.data.reasoning}`);
+      toast.success(`Priority: ${res.data.suggested_priority}`, res.data.reasoning);
     } catch (err: any) {
-      alert(err.response?.data?.detail?.error?.message || 'Failed to suggest priority.');
+      toast.error('Suggestion Failed', err.response?.data?.detail?.error?.message || 'Failed to suggest priority.');
     } finally {
       setSuggestingPriority(false);
     }
@@ -120,13 +124,15 @@ const TaskList = ({ project }: { project: Project }) => {
       };
       if (editTask) {
         await taskService.update(editTask.id, data);
+        toast.success('Task Updated', 'Task details saved successfully.');
       } else {
         await taskService.create(project.id, data);
+        toast.success('Task Created', 'New task added to project.');
       }
       setShowForm(false);
       loadTasks();
     } catch (err: any) {
-      alert(err.response?.data?.detail?.error?.message || 'Failed to save task');
+      toast.error('Save Failed', err.response?.data?.detail?.error?.message || 'Failed to save task');
     }
   };
 
@@ -134,10 +140,11 @@ const TaskList = ({ project }: { project: Project }) => {
     if (!confirm('Delete this task?')) return;
     try {
       await taskService.delete(id);
+      toast.success('Task Deleted', 'Task was removed.');
       loadTasks();
       if (detailTask?.id === id) setDetailTask(null);
     } catch (err: any) {
-      alert(err.response?.data?.detail?.error?.message || 'Failed to delete task');
+      toast.error('Delete Failed', err.response?.data?.detail?.error?.message || 'Failed to delete task');
     }
   };
 
@@ -186,20 +193,32 @@ const TaskList = ({ project }: { project: Project }) => {
               onChange={e => setSearch(e.target.value)} 
             />
           </div>
-          <select className="form-select" style={{ width: 'auto', minWidth: '130px' }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-            <option value="">All Statuses</option>
-            <option value="TODO">To Do</option>
-            <option value="IN_PROGRESS">In Progress</option>
-            <option value="IN_REVIEW">In Review</option>
-            <option value="DONE">Done</option>
-          </select>
-          <select className="form-select" style={{ width: 'auto', minWidth: '130px' }} value={filterPriority} onChange={e => setFilterPriority(e.target.value)}>
-            <option value="">All Priorities</option>
-            <option value="LOW">Low</option>
-            <option value="MEDIUM">Medium</option>
-            <option value="HIGH">High</option>
-            <option value="URGENT">Urgent</option>
-          </select>
+          <SelectBox
+            value={filterStatus}
+            onValueChange={setFilterStatus}
+            options={[
+              { value: '', label: 'All Statuses' },
+              { value: 'TODO', label: 'To Do' },
+              { value: 'IN_PROGRESS', label: 'In Progress' },
+              { value: 'IN_REVIEW', label: 'In Review' },
+              { value: 'DONE', label: 'Done' },
+            ]}
+            placeholder="All Statuses"
+            style={{ width: 'auto', minWidth: '135px' }}
+          />
+          <SelectBox
+            value={filterPriority}
+            onValueChange={setFilterPriority}
+            options={[
+              { value: '', label: 'All Priorities' },
+              { value: 'LOW', label: 'Low' },
+              { value: 'MEDIUM', label: 'Medium' },
+              { value: 'HIGH', label: 'High' },
+              { value: 'URGENT', label: 'Urgent' },
+            ]}
+            placeholder="All Priorities"
+            style={{ width: 'auto', minWidth: '135px' }}
+          />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           <button
@@ -309,12 +328,16 @@ const TaskList = ({ project }: { project: Project }) => {
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="form-group flex-1">
                   <label className="form-label">Status</label>
-                  <select className="form-select" value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})}>
-                    <option value="TODO">TODO</option>
-                    <option value="IN_PROGRESS">IN PROGRESS</option>
-                    <option value="IN_REVIEW">IN REVIEW</option>
-                    <option value="DONE">DONE</option>
-                  </select>
+                  <SelectBox
+                    value={formData.status}
+                    onValueChange={val => setFormData({...formData, status: val})}
+                    options={[
+                      { value: 'TODO', label: 'TODO' },
+                      { value: 'IN_PROGRESS', label: 'IN PROGRESS' },
+                      { value: 'IN_REVIEW', label: 'IN REVIEW' },
+                      { value: 'DONE', label: 'DONE' },
+                    ]}
+                  />
                 </div>
                 <div className="form-group flex-1">
                   <div className="flex items-center justify-between mb-1">
@@ -329,21 +352,28 @@ const TaskList = ({ project }: { project: Project }) => {
                       {suggestingPriority ? 'Evaluating...' : '✨ Suggest'}
                     </button>
                   </div>
-                  <select className="form-select" value={formData.priority} onChange={e => setFormData({...formData, priority: e.target.value})}>
-                    <option value="LOW">LOW</option>
-                    <option value="MEDIUM">MEDIUM</option>
-                    <option value="HIGH">HIGH</option>
-                    <option value="URGENT">URGENT</option>
-                  </select>
+                  <SelectBox
+                    value={formData.priority}
+                    onValueChange={val => setFormData({...formData, priority: val})}
+                    options={[
+                      { value: 'LOW', label: 'LOW' },
+                      { value: 'MEDIUM', label: 'MEDIUM' },
+                      { value: 'HIGH', label: 'HIGH' },
+                      { value: 'URGENT', label: 'URGENT' },
+                    ]}
+                  />
                 </div>
                 <div className="form-group flex-1">
                   <label className="form-label">Assignee</label>
-                  <select className="form-select" value={formData.assignee_id} onChange={e => setFormData({...formData, assignee_id: e.target.value})}>
-                    <option value="">Unassigned</option>
-                    {members.map(m => (
-                      <option key={m.user_id} value={m.user_id}>{m.user_name}</option>
-                    ))}
-                  </select>
+                  <SelectBox
+                    value={formData.assignee_id}
+                    onValueChange={val => setFormData({...formData, assignee_id: val})}
+                    options={[
+                      { value: '', label: 'Unassigned' },
+                      ...members.map(m => ({ value: m.user_id, label: m.user_name }))
+                    ]}
+                    placeholder="Unassigned"
+                  />
                 </div>
                 <div className="form-group flex-1">
                   <label className="form-label">Due Date</label>

@@ -21,6 +21,7 @@ import { workspaceService } from '../services/workspaceService';
 import { CreateMeetingModal } from '../components/CreateMeetingModal';
 import { useBreadcrumbs } from '../context/BreadcrumbContext';
 import { extractErrorMessage } from '../services/api';
+import { toast } from '../utils/toast';
 import './Meetings.css';
 
 interface MeetingsDashboardProps {
@@ -108,9 +109,12 @@ export const MeetingsDashboard: React.FC<MeetingsDashboardProps> = ({ projectId:
     setJoinCodeError('');
     try {
       const res = await meetingService.joinByCode(code);
+      toast.success('Joining Meeting', `Connecting to ${res.data.meeting.title}...`);
       navigate(`/meetings/${res.data.meeting.id}/room`);
     } catch (err: any) {
-      setJoinCodeError(extractErrorMessage(err, 'Invalid meeting code. Please verify and try again.'));
+      const msg = extractErrorMessage(err, 'Invalid meeting code. Please verify and try again.');
+      setJoinCodeError(msg);
+      toast.error('Join Failed', msg);
     } finally {
       setJoiningCode(false);
     }
@@ -120,6 +124,7 @@ export const MeetingsDashboard: React.FC<MeetingsDashboardProps> = ({ projectId:
     e.stopPropagation();
     navigator.clipboard.writeText(code);
     setCopiedCodeId(id);
+    toast.info('Meeting Code Copied', `Copied ${code} to clipboard`);
     setTimeout(() => setCopiedCodeId(null), 2000);
   };
 

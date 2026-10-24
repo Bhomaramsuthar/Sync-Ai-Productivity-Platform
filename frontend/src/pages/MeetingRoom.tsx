@@ -38,6 +38,7 @@ import {
 import { extractErrorMessage } from '../services/api';
 import './MeetingRoom.css';
 import { ThinkingLoader } from '../components/ThinkingLoader';
+import { toast } from '../utils/toast';
 
 const getAvatarColor = (name?: string | null) => {
   if (!name) return '#6b7280';
@@ -524,6 +525,7 @@ export const MeetingRoom: React.FC = () => {
     if (meeting?.meeting_code) {
       navigator.clipboard.writeText(meeting.meeting_code);
       setCopiedCode(true);
+      toast.info('Meeting Code Copied', `Code ${meeting.meeting_code} copied to clipboard`);
       setTimeout(() => setCopiedCode(false), 2000);
     }
   };
@@ -563,6 +565,7 @@ export const MeetingRoom: React.FC = () => {
         } catch (err) {
           console.warn('Error ending meeting:', err);
         }
+        toast.success('Meeting Ended', 'Redirecting to AI meeting intelligence dashboard...');
         roomRef.current?.disconnect();
         navigate(`/meetings/${meetingId}`);
       } else {
@@ -570,6 +573,7 @@ export const MeetingRoom: React.FC = () => {
       }
     } else {
       await meetingService.leave(meetingId!).catch(() => null);
+      toast.info('Left Meeting', 'You have left the meeting room.');
       roomRef.current?.disconnect();
       navigate(`/meetings/${meetingId}`);
     }

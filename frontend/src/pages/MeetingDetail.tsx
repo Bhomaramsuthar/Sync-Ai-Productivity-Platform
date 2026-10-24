@@ -35,6 +35,7 @@ import { memberService, workspaceService } from '../services/workspaceService';
 import { projectService } from '../services/projectService';
 import { ThinkingLoader } from '../components/ThinkingLoader';
 import { extractErrorMessage } from '../services/api';
+import { toast } from '../utils/toast';
 import './Meetings.css';
 
 const getAvatarColor = (name?: string | null) => {
@@ -66,7 +67,6 @@ export const MeetingDetail: React.FC = () => {
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState('');
   const [copiedCode, setCopiedCode] = useState(false);
-  const [successToast, setSuccessToast] = useState('');
 
   // Manual transcript ingest state
   const [showAddTranscript, setShowAddTranscript] = useState(false);
@@ -157,8 +157,7 @@ export const MeetingDetail: React.FC = () => {
               ]);
               setSuggestions(sugRes.data);
               setTranscripts(transRes.data);
-              setSuccessToast('AI processing pipeline completed! Suggestions are ready for review.');
-              setTimeout(() => setSuccessToast(''), 4000);
+              toast.success('AI Pipeline Complete', 'AI suggestions and summary are ready for review.');
             }
           }
         } catch (e) {
@@ -179,10 +178,11 @@ export const MeetingDetail: React.FC = () => {
       const sugRes = await meetingService.listSuggestions(meetingId!);
       setSuggestions(sugRes.data);
       setActiveTab('action_items');
-      setSuccessToast('AI summary & action items extracted successfully!');
-      setTimeout(() => setSuccessToast(''), 4000);
+      toast.success('AI Extraction Complete', 'Executive summary, key decisions, and action items extracted successfully!');
     } catch (err: any) {
-      setError(extractErrorMessage(err, 'AI extraction failed'));
+      const msg = extractErrorMessage(err, 'AI extraction failed');
+      setError(msg);
+      toast.error('AI Extraction Failed', msg);
     } finally {
       setAnalyzing(false);
     }
@@ -192,14 +192,16 @@ export const MeetingDetail: React.FC = () => {
     try {
       const res = await meetingService.approveSuggestion(id, overrides);
       setSuggestions((prev) => prev.map((s) => (s.id === id ? res.data : s)));
-      setSuccessToast(
+      toast.success(
+        'Suggestion Approved',
         res.data.item_type === 'TASK'
-          ? 'Approved! Created new task in project.'
-          : 'Approved! Scheduled new event in calendar.'
+          ? 'Created new task in project.'
+          : 'Scheduled new event in workspace calendar.'
       );
-      setTimeout(() => setSuccessToast(''), 4000);
     } catch (err: any) {
-      setError(extractErrorMessage(err, 'Failed to approve item'));
+      const msg = extractErrorMessage(err, 'Failed to approve item');
+      setError(msg);
+      toast.error('Approval Failed', msg);
     }
   };
 
@@ -207,8 +209,11 @@ export const MeetingDetail: React.FC = () => {
     try {
       const res = await meetingService.rejectSuggestion(id);
       setSuggestions((prev) => prev.map((s) => (s.id === id ? res.data : s)));
+      toast.info('Suggestion Dismissed', 'Action item dismissed from suggestions.');
     } catch (err: any) {
-      setError(extractErrorMessage(err, 'Failed to reject item'));
+      const msg = extractErrorMessage(err, 'Failed to reject item');
+      setError(msg);
+      toast.error('Dismissal Failed', msg);
     }
   };
 
@@ -216,8 +221,11 @@ export const MeetingDetail: React.FC = () => {
     try {
       const res = await meetingService.editSuggestion(id, updated);
       setSuggestions((prev) => prev.map((s) => (s.id === id ? res.data : s)));
+      toast.success('Suggestion Updated', 'Changes saved successfully.');
     } catch (err: any) {
-      setError(extractErrorMessage(err, 'Failed to edit item'));
+      const msg = extractErrorMessage(err, 'Failed to edit item');
+      setError(msg);
+      toast.error('Edit Failed', msg);
     }
   };
 
@@ -228,10 +236,11 @@ export const MeetingDetail: React.FC = () => {
       const defaultProj = meeting?.project_id || projects[0]?.id;
       const res = await meetingService.bulkApprove(pending, defaultProj);
       await loadAllData();
-      setSuccessToast(`Successfully approved ${res.data.length} action items!`);
-      setTimeout(() => setSuccessToast(''), 4000);
+      toast.success('Items Approved', `Successfully approved ${res.data.length} action items!`);
     } catch (err: any) {
-      setError(extractErrorMessage(err, 'Bulk approval failed'));
+      const msg = extractErrorMessage(err, 'Bulk approval failed');
+      setError(msg);
+      toast.error('Bulk Approval Failed', msg);
     }
   };
 
@@ -250,10 +259,10 @@ export const MeetingDetail: React.FC = () => {
       setTranscripts((prev) => [...prev, ...res.data]);
       setManualText('');
       setShowAddTranscript(false);
-      setSuccessToast('Transcript segment saved!');
-      setTimeout(() => setSuccessToast(''), 3000);
+      toast.success('Transcript Saved', 'Transcript segment saved to meeting log.');
     } catch (err: any) {
       setError('Failed to ingest transcript');
+      toast.error('Transcript Ingest Failed', 'Could not save transcript segment.');
     }
   };
 
@@ -261,6 +270,7 @@ export const MeetingDetail: React.FC = () => {
     if (meeting?.meeting_code) {
       navigator.clipboard.writeText(meeting.meeting_code);
       setCopiedCode(true);
+      toast.info('Meeting Code Copied', `Code ${meeting.meeting_code} copied to clipboard`);
       setTimeout(() => setCopiedCode(false), 2000);
     }
   };
@@ -297,32 +307,6 @@ export const MeetingDetail: React.FC = () => {
 
   return (
     <div className="meeting-detail-container">
-      {/* Toast Notification */}
-      {successToast && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '1.5rem',
-            right: '1.5rem',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            padding: '0.75rem 1.25rem',
-            borderRadius: '12px',
-            background: 'var(--status-success)',
-            color: '#ffffff',
-            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.4)',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            animation: 'fadeIn 0.2s ease',
-          }}
-        >
-          <CheckCircle2 size={16} />
-          {successToast}
-        </div>
-      )}
-
       {/* Back button & top navigation */}
       <div className="meeting-detail-nav">
         <button
@@ -683,8 +667,7 @@ export const MeetingDetail: React.FC = () => {
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(summary.summary_text);
-                      setSuccessToast('Summary copied to clipboard!');
-                      setTimeout(() => setSuccessToast(''), 3000);
+                      toast.info('Summary Copied', 'Executive summary copied to clipboard.');
                     }}
                     className="btn-icon btn-ghost"
                     title="Copy summary"

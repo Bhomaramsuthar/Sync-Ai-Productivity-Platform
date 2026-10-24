@@ -2,6 +2,7 @@ import React from 'react';
 import { type Task } from '../services/taskService';
 import { type Member } from '../services/workspaceService';
 import { X, Calendar, User, Flag, CheckCircle2, Clock, Edit2, Sparkles } from 'lucide-react';
+import { SelectBox } from './ui/select';
 
 interface TaskDetailModalProps {
   task: Task | null;
@@ -112,17 +113,19 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
               <div className="flex items-center gap-2 text-muted">
                 <CheckCircle2 size={15} className="shrink-0" />
                 <span>Status:</span>
-                <select 
-                  className="form-select py-0.5 px-2 text-xs ml-auto"
-                  style={{ width: 'auto' }}
-                  value={task.status}
-                  onChange={e => onStatusChange(task.id, e.target.value)}
-                >
-                  <option value="TODO">TODO</option>
-                  <option value="IN_PROGRESS">IN PROGRESS</option>
-                  <option value="IN_REVIEW">IN REVIEW</option>
-                  <option value="DONE">DONE</option>
-                </select>
+                <div className="ml-auto" style={{ width: '140px' }}>
+                  <SelectBox
+                    size="sm"
+                    value={task.status}
+                    onValueChange={val => onStatusChange(task.id, val)}
+                    options={[
+                      { value: 'TODO', label: 'TODO' },
+                      { value: 'IN_PROGRESS', label: 'IN PROGRESS' },
+                      { value: 'IN_REVIEW', label: 'IN REVIEW' },
+                      { value: 'DONE', label: 'DONE' },
+                    ]}
+                  />
+                </div>
               </div>
             )}
           </div>

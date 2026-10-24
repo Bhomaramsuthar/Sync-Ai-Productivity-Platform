@@ -4,8 +4,10 @@ import { taskService, type Task } from '../services/taskService';
 import { memberService, type Member } from '../services/workspaceService';
 import { TaskDetailModal } from '../components/TaskDetailModal';
 import { AITaskAssistantModal } from '../components/AITaskAssistantModal';
+import { SelectBox } from '../components/ui/select';
 
 import { Clock } from 'lucide-react';
+import { toast } from '../utils/toast';
 
 const KanbanBoard = ({ project }: { project: Project }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -37,8 +39,9 @@ const KanbanBoard = ({ project }: { project: Project }) => {
         setSelectedTask({ ...selectedTask, status: newStatus as any });
       }
       await taskService.update(taskId, { status: newStatus });
+      toast.info('Status Updated', `Task moved to ${newStatus.replace('_', ' ')}`);
     } catch (err) {
-      alert('Failed to update status');
+      toast.error('Status Update Failed', 'Failed to update task status.');
       loadTasks(); // rollback
     }
   };
@@ -106,15 +109,15 @@ const KanbanBoard = ({ project }: { project: Project }) => {
                   </div>
 
                   <div className="mt-3 pt-2.5 border-t border-subtle" onClick={e => e.stopPropagation()}>
-                    <select 
-                      className="form-select text-xs py-1" 
-                      value={task.status} 
-                      onChange={e => handleStatusChange(task.id, e.target.value)}
-                    >
-                      {columnConfig.map(c => (
-                        <option key={c.key} value={c.key}>Move to {c.label}</option>
-                      ))}
-                    </select>
+                    <SelectBox
+                      size="sm"
+                      value={task.status}
+                      onValueChange={val => handleStatusChange(task.id, val)}
+                      options={columnConfig.map(c => ({
+                        value: c.key,
+                        label: `Move to ${c.label}`,
+                      }))}
+                    />
                   </div>
                 </div>
               ))}

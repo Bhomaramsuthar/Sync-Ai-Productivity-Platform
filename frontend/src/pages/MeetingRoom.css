@@ -307,46 +307,58 @@
   justify-content: center;
   width: 48px;
   height: 48px;
-  border-radius: 14px;
+  border-radius: var(--radius-full);
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: #ffffff;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: transform var(--sileo-duration) var(--sileo-spring-easing),
+              background-color 200ms ease,
+              box-shadow var(--sileo-duration) var(--sileo-spring-easing);
   position: relative;
 }
 
 .dock-btn:hover {
   background: rgba(255, 255, 255, 0.12);
-  transform: translateY(-1px);
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.dock-btn:active {
+  transform: scale(0.95);
 }
 
 .dock-btn.active-pill {
-  background: #6366f1;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
   border-color: #818cf8;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
 }
 
 .dock-btn.muted-off {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.35);
-  color: #f87171;
+  background: rgba(244, 63, 94, 0.15);
+  border-color: rgba(244, 63, 94, 0.35);
+  color: #fb7185;
 }
 
 .dock-btn.btn-leave-call {
   width: auto;
-  padding: 0 1.25rem;
-  background: #ef4444;
-  border-color: #dc2626;
+  padding: 0 1.5rem;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+  border-color: rgba(255, 255, 255, 0.15);
   color: #ffffff;
   font-weight: 600;
   font-size: 0.8125rem;
   display: flex;
   flex-direction: row;
   gap: 0.5rem;
+  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.35);
 }
 
 .dock-btn.btn-leave-call:hover {
-  background: #dc2626;
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+  box-shadow: 0 8px 20px rgba(244, 63, 94, 0.5);
+  transform: scale(1.03) translateY(-1px);
 }
 
 .dock-btn-badge {
@@ -358,7 +370,7 @@
   font-size: 0.65rem;
   font-weight: 700;
   padding: 2px 5px;
-  border-radius: 10px;
+  border-radius: var(--radius-full);
 }
 
 /* Collapsible Side Drawer */
@@ -383,26 +395,31 @@
 
 .drawer-tab-switch {
   display: flex;
-  background: rgba(0, 0, 0, 0.4);
-  border-radius: 8px;
-  padding: 2px;
-  gap: 2px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-full);
+  padding: 3px;
+  gap: 3px;
 }
 
 .drawer-tab-btn {
-  padding: 4px 10px;
+  padding: 4px 12px;
   font-size: 0.75rem;
   font-weight: 600;
-  border-radius: 6px;
+  border-radius: var(--radius-full);
   border: none;
   background: transparent;
   color: #a1a1aa;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all var(--sileo-duration) var(--sileo-spring-easing);
+}
+
+.drawer-tab-btn:hover {
+  color: #ffffff;
 }
 
 .drawer-tab-btn.active {
-  background: #27272a;
+  background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
 }
 
