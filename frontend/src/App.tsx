@@ -14,7 +14,6 @@ import { MeetingsDashboard } from './pages/MeetingsDashboard';
 import { MeetingDetail } from './pages/MeetingDetail';
 import { MeetingRoom } from './pages/MeetingRoom';
 import Settings from './pages/Settings';
-import SelectShowcase from './pages/SelectShowcase';
 import { Toaster } from 'sileo';
 import 'sileo/styles.css';
 import './index.css';
@@ -42,7 +41,6 @@ function App() {
             <Route path="/meetings/:meetingId" element={<MeetingDetail />} />
             <Route path="/meetings/:meetingId/room" element={<MeetingRoom />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/ui/select" element={<SelectShowcase />} />
             
             {/* Catch all for authenticated users */}
             <Route path="*" element={<Navigate to="/workspaces" replace />} />

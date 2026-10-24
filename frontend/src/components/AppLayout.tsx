@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useBreadcrumbs, type BreadcrumbItem } from '../context/BreadcrumbContext';
-import { Briefcase, LogOut, Sparkles, ChevronRight, Home, Settings, Sliders } from 'lucide-react';
+import { Briefcase, LogOut, Sparkles, ChevronRight, Home, Settings } from 'lucide-react';
 import { toast } from '../utils/toast';
 
 export const AppLayout: React.FC = () => {
@@ -56,10 +56,6 @@ export const AppLayout: React.FC = () => {
 
     if (parts[0] === 'settings') {
       return [{ label: 'Settings', path: '/settings' }];
-    }
-
-    if (parts[0] === 'ui') {
-      return [{ label: 'UI Components', path: '/ui/select' }, { label: 'Select & Dropdown' }];
     }
 
     if (parts[0] === 'projects' && parts[1]) {
@@ -138,16 +134,6 @@ export const AppLayout: React.FC = () => {
           >
             <Settings size={17} />
             <span>Settings</span>
-          </NavLink>
-          <NavLink
-            to="/ui/select"
-            className={({ isActive }) =>
-              `sidebar-nav-item ${isActive ? 'active' : ''}`
-            }
-            id="nav-ui-select"
-          >
-            <Sliders size={17} />
-            <span>UI Components</span>
           </NavLink>
         </div>
 
