@@ -5,6 +5,8 @@ import { workspaceService, type Workspace } from '../services/workspaceService';
 import { FolderKanban, Plus, ArrowLeft, Search, Clock, ArrowRight, X } from 'lucide-react';
 import { extractErrorMessage } from '../services/api';
 
+import { useWorkspaceRealtime } from '../utils/useWorkspaceRealtime';
+
 const ProjectsList: React.FC = () => {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const navigate = useNavigate();
@@ -13,6 +15,14 @@ const ProjectsList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const refreshProjects = () => {
+    if (!workspaceId) return;
+    projectService
+      .list(workspaceId)
+      .then((res) => setProjects(res.data))
+      .catch(() => {});
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -33,6 +43,18 @@ const ProjectsList: React.FC = () => {
     };
     loadData();
   }, [workspaceId]);
+
+  useWorkspaceRealtime(workspaceId, {
+    onEvent: (evt) => {
+      if (!evt.event) return;
+      if (evt.event.startsWith('project:')) {
+        refreshProjects();
+      }
+    },
+    onReconnect: () => {
+      refreshProjects();
+    },
+  });
 
   const filtered = projects.filter((p) => {
     const q = searchQuery.toLowerCase();
@@ -80,8 +102,8 @@ const ProjectsList: React.FC = () => {
       </div>
 
       {/* Toolbar: Search */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ position: 'relative', minWidth: 280 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.85rem' }}>
+        <div style={{ position: 'relative', flex: '1 1 240px', maxWidth: '100%' }}>
           <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#71717a' }} />
           <input
             type="text"
@@ -89,7 +111,7 @@ const ProjectsList: React.FC = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="form-input"
-            style={{ paddingLeft: 38, height: 38 }}
+            style={{ paddingLeft: 38, height: 40 }}
             id="projects-search-input"
           />
           {searchQuery && (
@@ -105,6 +127,7 @@ const ProjectsList: React.FC = () => {
                 color: '#71717a',
                 cursor: 'pointer',
               }}
+              aria-label="Clear search"
             >
               <X size={14} />
             </button>
@@ -120,7 +143,7 @@ const ProjectsList: React.FC = () => {
 
       {/* Loading Skeletons */}
       {loading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '1.25rem' }}>
+        <div className="projects-grid">
           {[1, 2, 3].map((i) => (
             <div key={i} className="card" style={{ height: 180, padding: '1.25rem' }} />
           ))}
@@ -154,7 +177,7 @@ const ProjectsList: React.FC = () => {
         </div>
       ) : (
         /* Project Cards Grid */
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '1.25rem' }}>
+        <div className="projects-grid">
           {filtered.map((p) => (
             <div
               key={p.id}

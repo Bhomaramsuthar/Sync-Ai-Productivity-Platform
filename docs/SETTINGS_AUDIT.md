@@ -1,0 +1,93 @@
+# Settings Functionality Audit — Sync AI Productivity Platform
+
+**Audit Date**: October 2026  
+**Auditor**: Antigravity Assistant  
+**Repository**: `Sync-Ai-Productivity-Platform`  
+**Scope**: Complete frontend and backend settings audit across all user profile, appearance, notification, account security, and workspace administration surfaces.
+
+---
+
+## Executive Summary
+
+A comprehensive, evidence-based audit of all settings, preferences, profile, security, and workspace-administration controls was conducted across both the frontend React application and FastAPI backend service.
+
+### Summary Statistics
+- **Total Settings Entry Points Audited**: 32 distinct interactive controls
+- **Initial Verified Status Breakdown**:
+  - **Working**: 27 controls (84.4%)
+  - **Partially Working**: 5 controls (15.6%) — Theme visual DOM reactivity, preferences dirty-tracking, clipboard error fallback, and in-flight loading guards on workspace modification/deletion actions.
+  - **Broken**: 0 controls (0%)
+  - **Not Implemented**: 0 controls (0%)
+- **Backend Authorization & Security Verification**:
+  - `GET /api/v1/users/me`: Authenticated JWT retrieval; unauthenticated requests rejected with 401/403.
+  - `PATCH /api/v1/users/me`: Enforces display name validation and JSON preferences structure.
+  - `PATCH /api/v1/users/{user_id}`: Prevents normal users from tampering with another user's identity (enforces HTTP 403 Forbidden).
+  - `POST /api/v1/users/me/avatar`: Enforces 2MB size cap, extension whitelist (`.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`), MIME verification, and binary magic-bytes checking. Disguised scripts rejected with HTTP 400.
+  - `DELETE /api/v1/users/me/avatar`: Safely clears avatar URL in database and purges file from storage.
+  - `POST /api/v1/users/me/change-password`: Verifies current password hash via bcrypt, validates minimum length (6), hashes new password.
+  - `DELETE /api/v1/users/me`: Irreversible deletion gate verifying email confirmation string and current password. Explicitly prohibits account deletion if the user is the sole owner of active workspaces (`CANNOT_DELETE_WORKSPACE_OWNER`) to prevent orphaned team assets.
+  - `PATCH /api/v1/workspaces/{workspace_id}`: Enforces OWNER or ADMIN role check (MEMBER receives HTTP 403 Forbidden).
+  - `DELETE /api/v1/workspaces/{workspace_id}`: Strictly restricted to workspace OWNER.
+  - `DELETE /api/v1/workspaces/{workspace_id}/members/{user_id}`: Prevents removing the sole remaining workspace OWNER.
+
+---
+
+## Detailed Inventory & Audit Matrix
+
+| # | Page / Section | Element | Intended Behavior | Frontend Implementation | Backend/API Dependency | Persistence | Test Performed | Status | Evidence / Issue | Required Fix | Post-Fix Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | Global Sidebar | `Settings` NavLink (`#nav-settings`) | Navigates to `/settings` with active state highlight | `AppLayout.tsx` (`<NavLink to="/settings">`) | None (Client-side routing) | React Router | Clicked link, verified URL transitions to `/settings` and breadcrumbs update | **Working** | Navigates cleanly to `/settings`; renders page and tab navigation | None required | **Working** |
+| 2 | Global Sidebar | User Footer Profile Card (`#sidebar-user-profile-link`) | Displays user avatar/initial, name, email; clicks to `/settings` | `AppLayout.tsx` (`<Link to="/settings">`) | `GET /api/v1/auth/me` | Client state (`AuthContext`) | Inspected DOM render with authenticated user session | **Working** | Displays avatar image or initial fallback, user name, email, and navigates on click | None required | **Working** |
+| 3 | Global Sidebar | `Sign Out` Button (`#nav-logout-btn`) | Clears JWT from localStorage, shows toast, redirects to `/login` | `AppLayout.tsx` (`handleLogout`) | `POST /api/v1/auth/logout` | `localStorage.removeItem('token')` | Triggered logout, verified token cleared and redirect occurred | **Working** | Clears token, toasts confirmation, and redirects to `/login` | None required | **Working** |
+| 4 | Top Header | `Settings` Button (`#header-settings-btn`) | Navigates user to `/settings` | `AppLayout.tsx` (`navigate('/settings')`) | None (Client-side routing) | React Router | Clicked header settings button from various pages | **Working** | Navigates to `/settings` route with active button class | None required | **Working** |
+| 5 | Settings Header | `Refresh` Button | Reloads latest user profile data from server | `Settings.tsx` (`refreshUser()`) | `GET /api/v1/auth/me` | Database / API sync | Clicked button, verified network call to `/api/v1/auth/me` and toast display | **Working** | Reloads current profile state from backend and confirms with toast | None required | **Working** |
+| 6 | Settings Tabs | `Profile` Tab Button (`#tab-profile`) | Activates Profile section | `Settings.tsx` (`setActiveTab('profile')`) | None (Local state) | Component state (`activeTab`) | Clicked tab, verified active tab style and Profile card visibility | **Working** | Tab switches immediately and displays Profile controls | Add `aria-controls` for accessibility | **Working** |
+| 7 | Settings Tabs | `Preferences` Tab Button (`#tab-preferences`) | Activates Preferences section | `Settings.tsx` (`setActiveTab('preferences')`) | None (Local state) | Component state (`activeTab`) | Clicked tab, verified Preferences card visibility | **Working** | Tab switches and displays theme & notification preferences | Add `aria-controls` for accessibility | **Working** |
+| 8 | Settings Tabs | `Account & Security` Tab Button (`#tab-account`) | Activates Account & Security section | `Settings.tsx` (`setActiveTab('account')`) | None (Local state) | Component state (`activeTab`) | Clicked tab, verified Account identity & security forms | **Working** | Tab switches and displays password change and danger zone | Add `aria-controls` for accessibility | **Working** |
+| 9 | Settings Tabs | `Workspace Settings` Tab Button (`#tab-workspaces`) | Activates Workspace list & management section | `Settings.tsx` (`setActiveTab('workspaces')`) | `GET /api/v1/workspaces` | Component state (`workspaces`) | Clicked tab, verified workspace fetch triggered | **Working** | Fetches workspaces via API and renders cards with user roles | None required | **Working** |
+| 10 | Profile Tab | `Avatar File Input` (`#avatar-file-input`) | Accepts JPG, PNG, WebP, GIF (<2MB) | `Settings.tsx` (`handleAvatarSelect`) | `POST /api/v1/users/me/avatar` | Supabase Storage / DB URL | Uploaded valid JPEG file and tested oversized file (>2MB) rejection | **Working** | Valid image uploads, stores in avatars bucket, updates avatar preview; oversized file blocked client-side | None required | **Working** |
+| 11 | Profile Tab | `Upload New Photo` Button (`#upload-avatar-btn`) | Opens system file picker dialog | `Settings.tsx` (`fileInputRef.current?.click()`) | `POST /api/v1/users/me/avatar` | Database (`avatar_url`) | Clicked button, verified file selection dialog opens | **Working** | Opens file picker; shows spinner and disables button while uploading | None required | **Working** |
+| 12 | Profile Tab | `Remove Photo` Button (`#remove-avatar-btn`) | Prompts confirmation and removes avatar photo | `Settings.tsx` (`handleRemoveAvatar`) | `DELETE /api/v1/users/me/avatar` | Database (`avatar_url = null`) | Clicked remove button, confirmed dialog, verified avatar resets to monogram | **Working** | Sends DELETE request, resets avatar to fallback letter, and updates context | None required | **Working** |
+| 13 | Profile Tab | `Display Name` Input (`#input-display-name`) | Edits user display name with 100 char limit | `Settings.tsx` (`setDisplayName`) | None (Controlled input) | Component state (`displayName`) | Typed text, tested length counter and empty string validation | **Working** | Displays current name, tracks length, prevents empty submit | None required | **Working** |
+| 14 | Profile Tab | `Email Address` Input (`#input-email-readonly`) | Displays primary verified email in readonly format | `Settings.tsx` (`readOnly`) | `GET /api/v1/users/me` | Database (`users.email`) | Inspected element; confirmed user cannot edit primary email | **Working** | Clearly displayed as read-only with Lock icon and "Verified Primary" badge | None required | **Working** |
+| 15 | Profile Tab | `Save Profile Changes` Button (`#save-profile-btn`) | Submits updated display name to backend | `Settings.tsx` (`handleSaveProfile`) | `PATCH /api/v1/users/me` | Database (`users.name`) | Submitted modified name; verified network payload and DB update; reloaded page | **Working** | Successfully updates display name in DB and updates header/sidebar immediately | None required | **Working** |
+| 16 | Preferences Tab | `Dark Mode` Card (`#theme-option-dark`) | Selects obsidian dark theme | `Settings.tsx` (`setTheme('dark')`) | `PATCH /api/v1/users/me` | Database (`users.preferences.theme`) | Clicked card, saved preferences; checked DOM attributes | **Partially Working** | Value persisted to DB, but CSS was not reacting dynamically to `data-theme` attribute | Add DOM `data-theme` application effect in `AuthContext` and define theme CSS | **Working** |
+| 17 | Preferences Tab | `Light Mode` Card (`#theme-option-light`) | Selects daytime light theme | `Settings.tsx` (`setTheme('light')`) | `PATCH /api/v1/users/me` | Database (`users.preferences.theme`) | Clicked card, saved preferences; checked DOM attributes | **Partially Working** | Saved to DB, but app lacked light theme CSS variables on root | Implement `[data-theme="light"]` variables and reactive DOM listener | **Working** |
+| 18 | Preferences Tab | `System Sync` Card (`#theme-option-system`) | Matches OS light/dark appearance schedule | `Settings.tsx` (`setTheme('system')`) | `PATCH /api/v1/users/me` | Database (`users.preferences.theme`) | Clicked card, saved preferences | **Partially Working** | Saved to DB, but lacked OS `matchMedia` listener | Add media query listener for `(prefers-color-scheme: dark)` | **Working** |
+| 19 | Preferences Tab | `Email Notifications` Toggle (`#pref-email-notifications`) | Toggles email alert preference | `Settings.tsx` (`setEmailNotifications`) | `PATCH /api/v1/users/me` | Database (`users.preferences.email_notifications`) | Toggled switch, clicked Save, refreshed page to verify persistence | **Working** | Persists boolean accurately in user preferences JSON column | None required | **Working** |
+| 20 | Preferences Tab | `Task Assignment Updates` Toggle (`#pref-task-updates`) | Toggles task notification preference | `Settings.tsx` (`setTaskUpdates`) | `PATCH /api/v1/users/me` | Database (`users.preferences.task_updates`) | Toggled switch, saved, refreshed page | **Working** | Persists boolean accurately in user preferences JSON column | None required | **Working** |
+| 21 | Preferences Tab | `Meeting & Calendar Reminders` Toggle (`#pref-meeting-reminders`) | Toggles meeting reminder preference | `Settings.tsx` (`setMeetingReminders`) | `PATCH /api/v1/users/me` | Database (`users.preferences.meeting_reminders`) | Toggled switch, saved, refreshed page | **Working** | Persists boolean accurately in user preferences JSON column | None required | **Working** |
+| 22 | Preferences Tab | `AI Productivity Suggestions` Toggle (`#pref-ai-suggestions`) | Toggles automated AI suggestions | `Settings.tsx` (`setAiSuggestions`) | `PATCH /api/v1/users/me` | Database (`users.preferences.ai_suggestions`) | Toggled switch, saved, refreshed page | **Working** | Persists boolean accurately in user preferences JSON column | None required | **Working** |
+| 23 | Preferences Tab | `Weekly Productivity Digest` Toggle (`#pref-weekly-digest`) | Toggles Monday executive summary email | `Settings.tsx` (`setWeeklyDigest`) | `PATCH /api/v1/users/me` | Database (`users.preferences.weekly_digest`) | Toggled switch, saved, refreshed page | **Working** | Persists boolean accurately in user preferences JSON column | None required | **Working** |
+| 24 | Preferences Tab | `Save Preferences` Button (`#save-preferences-btn`) | Persists all theme & notification preferences | `Settings.tsx` (`handleSavePreferences`) | `PATCH /api/v1/users/me` | Database (`users.preferences`) | Modified switches, clicked button; verified PATCH payload and toast | **Partially Working** | Saved successfully, but button was not disabled when state was clean (no changes) | Add dirty tracking or disabled condition when unchanged | **Working** |
+| 25 | Account Tab | `Copy User ID` Button (`#copy-user-id-btn`) | Copies user UUID string to clipboard | `Settings.tsx` (`handleCopyId`) | None (Clipboard API) | Clipboard | Clicked button, checked clipboard content | **Partially Working** | Used direct `navigator.clipboard.writeText` without fallback for non-secure contexts | Add try/catch and fallback textarea selection mechanism | **Working** |
+| 26 | Account Tab | `Change Password` Form (`#change-password-btn`) | Validates and updates password hash | `Settings.tsx` (`handleChangePassword`) | `POST /api/v1/users/me/change-password` | Database (`users.password_hash`) | Tested password mismatch, length <6, wrong current password, and valid update | **Working** | Client and server validations prevent invalid passwords; successfully updates hash | None required | **Working** |
+| 27 | Account Tab | `Sign Out of Sync AI` Button (`#settings-signout-btn`) | Prompts confirmation and logs out session | `Settings.tsx` (`handleSignOut`) | `POST /api/v1/auth/logout` | `localStorage.removeItem('token')` | Clicked button, confirmed prompt | **Working** | Clears token, toasts, and redirects to `/login` | None required | **Working** |
+| 28 | Account Tab | `Delete Account` Button & Modal (`#open-delete-account-modal-btn`, `#confirm-delete-account-btn`) | Opens confirmation modal, requires email verification and password | `Settings.tsx` (`handleDeleteAccount`) | `DELETE /api/v1/users/me` | Database (User cascade delete) | Tested email mismatch, wrong password, workspace owner block, and successful delete | **Working** | Blocks deletion if owner of workspaces; successfully deletes user if conditions met | None required | **Working** |
+| 29 | Workspace Settings Tab | `New Workspace` Button (`#create-workspace-shortcut-btn`) | Navigates to `/workspaces/new` | `Settings.tsx` (`navigate('/workspaces/new')`) | None (Client-side routing) | React Router | Clicked button | **Working** | Navigates cleanly to workspace creation form | None required | **Working** |
+| 30 | Workspace Settings Tab | `Manage Workspace` / `View Workspace` Button | Navigates to `/workspaces/:workspaceId` | `Settings.tsx` (`navigate('/workspaces/' + ws.id)`) | None (Client-side routing) | React Router | Clicked button for owned and member workspaces | **Working** | Navigates to workspace detail page | None required | **Working** |
+| 31 | Workspace Detail | `Workspace Settings` Card (`Edit Details`, `Save Changes`, `Cancel`) | Allows OWNER/ADMIN to edit workspace name and description | `WorkspaceDetail.tsx` (`handleUpdateWorkspace`) | `PATCH /api/v1/workspaces/:workspaceId` | Database (`workspaces.name`, `description`) | Toggled edit mode, changed name, submitted form | **Partially Working** | Saved to DB, but lacked in-flight loading/disabled state to prevent duplicate clicks | Add `updatingWorkspace` loading state | **Working** |
+| 32 | Workspace Detail | `Workspace Member Management` (Invite, Role Select, Remove, Delete Workspace) | Invites members by email, changes roles, removes members, or deletes workspace | `WorkspaceDetail.tsx` (`handleAddMember`, `handleChangeRole`, `handleRemoveMember`, `handleDeleteWorkspace`) | `POST/PATCH/DELETE /api/v1/workspaces/:id/members`, `DELETE /api/v1/workspaces/:id` | Database (`workspace_members`) | Tested adding member, changing role, removing member, and deleting workspace | **Partially Working** | All operations function and enforce RBAC on server, but lacked in-flight loading guards | Add loading indicators for role update, member removal, and workspace deletion | **Working** |
+
+---
+
+## Detailed Findings & Implemented Fixes
+
+### 1. Theme Persistence & Active Visual Application
+- **Issue**: In `Settings.tsx`, selecting "Dark Mode", "Light Mode", or "System Sync" updated component state and persisted `{ theme: "..." }` into `user.preferences.theme` in the database. However, neither `Settings.tsx` nor `AuthContext.tsx` applied the theme to the DOM (`data-theme` attribute on `<html>` or `<body>`). Moreover, `index.css` did not define light theme palette tokens (`[data-theme="light"]`), leaving the app permanently in dark mode regardless of user preference.
+- **Correction**:
+  1. Configured an active theme synchronization effect in `AuthContext.tsx` that evaluates `'dark'`, `'light'`, or `'system'` (via `window.matchMedia('(prefers-color-scheme: dark)')`) and sets `document.documentElement.setAttribute('data-theme', resolvedTheme)`.
+  2. Implemented curated `[data-theme="light"]` token overrides in `index.css` supporting light surfaces, high-contrast typography, and borders while preserving brand gradients and accents.
+  3. Ensured that theme changes update immediately in the UI upon selection and remain consistent across page reloads and tab navigation.
+
+### 2. Clipboard Fallback for User UUID
+- **Issue**: `handleCopyId` in `Settings.tsx` directly invoked `navigator.clipboard.writeText(user.id)`. In non-secure browser contexts (e.g., standard HTTP development environments or headless test runners), `navigator.clipboard` can throw permission or undefined errors.
+- **Correction**: Added a resilient clipboard utility function that falls back to `document.execCommand('copy')` with a temporary off-screen textarea when `navigator.clipboard` is unavailable.
+
+### 3. Duplicate Submission Guards in Workspace Settings
+- **Issue**: In `WorkspaceDetail.tsx`, `handleUpdateWorkspace`, `handleChangeRole`, `handleRemoveMember`, and `handleDeleteWorkspace` lacked in-flight boolean states, enabling rapid repeated clicks that could issue duplicate API requests.
+- **Correction**: Introduced dedicated loading flags (`updatingWorkspace`, `deletingWorkspace`, `roleUpdatingUserId`, `removingMemberId`) to disable interactive triggers and display clear feedback while operations are in flight.
+
+### 4. Dirty-State Tracking on Preferences
+- **Issue**: In `Settings.tsx`, the "Save Preferences" button was only disabled when `savingPreferences` was true, permitting redundant save requests when no toggles had changed.
+- **Correction**: Added change detection comparing the current form state with `user?.preferences` so the save action is cleanly disabled when no modifications exist.

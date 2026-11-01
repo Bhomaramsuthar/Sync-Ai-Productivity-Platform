@@ -189,3 +189,62 @@ def update_user_by_id(
 
     updated = user_service.update_user_profile(db=db, user=target_user, user_in=user_in)
     return updated
+
+
+# ---- Notifications ----
+
+@router.get("/notifications", response_model=list)
+def get_user_notifications(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.workspaces import repository as ws_repo
+    notifs = ws_repo.get_user_notifications(db, current_user.id)
+    return [
+        {
+            "id": n.id,
+            "user_id": n.user_id,
+            "workspace_id": n.workspace_id,
+            "type": n.type,
+            "title": n.title,
+            "message": n.message,
+            "data": n.data,
+            "is_read": n.is_read,
+            "created_at": n.created_at,
+        }
+        for n in notifs
+    ]
+
+
+@router.patch("/notifications/{notification_id}/read")
+def mark_user_notification_read(
+    notification_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.workspaces import repository as ws_repo
+    notif = ws_repo.mark_notification_read(db, notification_id, current_user.id)
+    if not notif:
+        raise HTTPException(status_code=404, detail={"error": {"code": "NOT_FOUND", "message": "Notification not found"}})
+    return {
+        "id": notif.id,
+        "user_id": notif.user_id,
+        "workspace_id": notif.workspace_id,
+        "type": notif.type,
+        "title": notif.title,
+        "message": notif.message,
+        "data": notif.data,
+        "is_read": notif.is_read,
+        "created_at": notif.created_at,
+    }
+
+
+@router.patch("/notifications/read-all")
+def mark_all_user_notifications_read(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.workspaces import repository as ws_repo
+    count = ws_repo.mark_all_notifications_read(db, current_user.id)
+    return {"updated_count": count}
+

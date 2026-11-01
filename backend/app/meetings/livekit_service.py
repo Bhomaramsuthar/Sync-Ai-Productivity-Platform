@@ -32,6 +32,13 @@ def create_livekit_token(
     api_secret = settings.LIVEKIT_API_SECRET or "secret"
     livekit_url = settings.LIVEKIT_URL or "ws://localhost:7880"
 
+    if settings.ENVIRONMENT == "production" and not settings.LIVEKIT_URL:
+        logger.warning(
+            "LIVEKIT_URL is not configured in production environment. Participant room token will default "
+            "to ws://localhost:7880, which is unreachable for remote users. Please set LIVEKIT_URL, "
+            "LIVEKIT_API_KEY, and LIVEKIT_API_SECRET in the deployment dashboard."
+        )
+
     try:
         from livekit import api as lk_api
         token = (

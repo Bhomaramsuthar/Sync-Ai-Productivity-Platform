@@ -8,6 +8,7 @@ import { SelectBox } from '../components/ui/select';
 
 import { Clock } from 'lucide-react';
 import { toast } from '../utils/toast';
+import { useWorkspaceRealtime } from '../utils/useWorkspaceRealtime';
 
 const KanbanBoard = ({ project }: { project: Project }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -16,6 +17,7 @@ const KanbanBoard = ({ project }: { project: Project }) => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [aiTask, setAiTask] = useState<Task | null>(null);
+  const [mobileFilterCol, setMobileFilterCol] = useState<'ALL' | string>('ALL');
 
   const loadTasks = async () => {
     try {
@@ -30,6 +32,39 @@ const KanbanBoard = ({ project }: { project: Project }) => {
     memberService.list(project.workspace_id).then(res => setMembers(res.data)).catch(console.error);
     loadTasks().finally(() => setLoading(false));
   }, [project.id]);
+
+  // Real-time synchronization for Kanban board
+  useWorkspaceRealtime(project.workspace_id, {
+    'task:created': (payload) => {
+      if (payload?.project_id === project.id) {
+        setTasks(prev => {
+          if (prev.some(t => t.id === payload.id)) return prev;
+          return [...prev, payload];
+        });
+      }
+    },
+    'task:updated': (payload) => {
+      if (payload?.project_id === project.id) {
+        setTasks(prev => {
+          const exists = prev.some(t => t.id === payload.id);
+          if (exists) {
+            return prev.map(t => t.id === payload.id ? { ...t, ...payload } : t);
+          }
+          return [...prev, payload];
+        });
+        setSelectedTask(prev => (prev && prev.id === payload.id ? { ...prev, ...payload } : prev));
+      }
+    },
+    'task:deleted': (payload) => {
+      if (payload?.project_id === project.id || tasks.some(t => t.id === payload?.id)) {
+        setTasks(prev => prev.filter(t => t.id !== payload.id));
+        setSelectedTask(prev => (prev && prev.id === payload.id ? null : prev));
+      }
+    },
+    onReconnect: () => {
+      loadTasks();
+    }
+  });
 
   const handleStatusChange = async (taskId: string, newStatus: string) => {
     try {
@@ -61,8 +96,36 @@ const KanbanBoard = ({ project }: { project: Project }) => {
   ];
 
   return (
-    <div className="kanban-board">
-      {columnConfig.map(col => {
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', width: '100%' }}>
+      {/* Mobile Column Quick Switcher */}
+      <div className="segmented-pills-track kanban-mobile-filter" style={{ alignSelf: 'flex-start' }}>
+        <button
+          className={`segmented-pill-item ${mobileFilterCol === 'ALL' ? 'active' : ''}`}
+          onClick={() => setMobileFilterCol('ALL')}
+          type="button"
+        >
+          All ({tasks.length})
+        </button>
+        {columnConfig.map((col) => {
+          const count = tasks.filter((t) => t.status === col.key).length;
+          return (
+            <button
+              key={col.key}
+              className={`segmented-pill-item ${mobileFilterCol === col.key ? 'active' : ''}`}
+              onClick={() => setMobileFilterCol(col.key)}
+              type="button"
+            >
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: col.color, display: 'inline-block' }} />
+              <span>{col.label} ({count})</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="kanban-board">
+        {columnConfig
+          .filter((col) => mobileFilterCol === 'ALL' || mobileFilterCol === col.key)
+          .map((col) => {
         const colTasks = tasks.filter(t => t.status === col.key);
         return (
           <div key={col.key} className="kanban-column">
@@ -130,6 +193,7 @@ const KanbanBoard = ({ project }: { project: Project }) => {
           </div>
         );
       })}
+      </div>
 
       {/* Task Detail Modal */}
       <TaskDetailModal 

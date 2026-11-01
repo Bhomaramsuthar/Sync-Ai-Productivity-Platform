@@ -1,15 +1,33 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useBreadcrumbs, type BreadcrumbItem } from '../context/BreadcrumbContext';
-import { Briefcase, LogOut, Sparkles, ChevronRight, Home, Settings } from 'lucide-react';
+import { Briefcase, LogOut, Sparkles, ChevronRight, Home, Settings, Menu, X } from 'lucide-react';
 import { toast } from '../utils/toast';
+import { GlobalAIAssistant } from './GlobalAIAssistant';
+import { NotificationBell } from './NotificationBell';
 
 export const AppLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { breadcrumbs, getWorkspaceName, getProjectName } = useBreadcrumbs();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  // Close mobile drawer on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileMenuOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -82,8 +100,15 @@ export const AppLayout: React.FC = () => {
 
   return (
     <div className="app-layout">
-      {/* Sidebar */}
-      <aside className="app-sidebar">
+      {/* Mobile Backdrop */}
+      <div
+        className={`app-sidebar-backdrop ${mobileMenuOpen ? 'open' : ''}`}
+        onClick={() => setMobileMenuOpen(false)}
+        aria-hidden="true"
+      />
+
+      {/* Sidebar Drawer */}
+      <aside className={`app-sidebar ${mobileMenuOpen ? 'open' : ''}`}>
         {/* Brand Header */}
         <div className="app-sidebar-header">
           <div className="flex items-center gap-3">
@@ -111,6 +136,14 @@ export const AppLayout: React.FC = () => {
               </div>
             </div>
           </div>
+
+          <button
+            className="app-sidebar-close-btn"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Close navigation"
+          >
+            <X size={16} />
+          </button>
         </div>
 
         {/* Navigation */}
@@ -121,7 +154,26 @@ export const AppLayout: React.FC = () => {
               `sidebar-nav-item ${isActive || location.pathname.startsWith('/projects') || location.pathname.startsWith('/meetings') ? 'active' : ''}`
             }
             id="nav-workspaces"
+            onClick={() => setMobileMenuOpen(false)}
+            style={{ position: 'relative' }}
           >
+            {(location.pathname.startsWith('/workspaces') || location.pathname.startsWith('/projects') || location.pathname.startsWith('/meetings') || location.pathname === '/dashboard') && (
+              <motion.div
+                layoutId="sidebar-active-indicator"
+                className="nav-active-indicator"
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: '15%',
+                  bottom: '15%',
+                  width: 3,
+                  borderRadius: '0 3px 3px 0',
+                  background: 'var(--accent-primary)',
+                  boxShadow: '0 0 8px rgba(99, 102, 241, 0.45)',
+                }}
+                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+              />
+            )}
             <Briefcase size={17} />
             <span>Workspaces</span>
           </NavLink>
@@ -131,7 +183,26 @@ export const AppLayout: React.FC = () => {
               `sidebar-nav-item ${isActive ? 'active' : ''}`
             }
             id="nav-settings"
+            onClick={() => setMobileMenuOpen(false)}
+            style={{ position: 'relative' }}
           >
+            {location.pathname === '/settings' && (
+              <motion.div
+                layoutId="sidebar-active-indicator"
+                className="nav-active-indicator"
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: '15%',
+                  bottom: '15%',
+                  width: 3,
+                  borderRadius: '0 3px 3px 0',
+                  background: 'var(--accent-primary)',
+                  boxShadow: '0 0 8px rgba(99, 102, 241, 0.45)',
+                }}
+                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+              />
+            )}
             <Settings size={17} />
             <span>Settings</span>
           </NavLink>
@@ -143,6 +214,7 @@ export const AppLayout: React.FC = () => {
             to="/settings"
             title="Profile & Settings"
             id="sidebar-user-profile-link"
+            onClick={() => setMobileMenuOpen(false)}
             style={{
               padding: '0.65rem 0.85rem',
               borderRadius: 16,
@@ -196,7 +268,10 @@ export const AppLayout: React.FC = () => {
           </Link>
 
           <button
-            onClick={handleLogout}
+            onClick={() => {
+              setMobileMenuOpen(false);
+              handleLogout();
+            }}
             className="sidebar-logout-btn"
             id="nav-logout-btn"
             title="Sign out of Sync AI"
@@ -210,61 +285,74 @@ export const AppLayout: React.FC = () => {
       {/* Main Content Area */}
       <main className="app-main">
         <header className="app-header">
-          {/* Breadcrumb Hierarchy */}
-          <nav className="header-breadcrumbs" aria-label="Breadcrumb">
-            <Link
-              to="/workspaces"
-              className="breadcrumb-root-icon"
-              title="Workspaces Root"
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, flex: 1 }}>
+            {/* Mobile Hamburger Button */}
+            <button
+              className="mobile-nav-toggle"
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+              aria-label="Toggle navigation menu"
+              aria-expanded={mobileMenuOpen}
+              id="mobile-nav-toggle-btn"
             >
-              <Home size={13} />
-            </Link>
+              <Menu size={18} />
+            </button>
 
-            {activeBreadcrumbs.map((crumb, idx) => {
-              const isLast = idx === activeBreadcrumbs.length - 1;
-              return (
-                <React.Fragment key={idx}>
-                  <ChevronRight size={13} className="breadcrumb-separator" />
-                  {isLast || !crumb.path ? (
-                    <span
-                      className={`breadcrumb-item current ${isLast ? 'active' : ''}`}
-                      title={crumb.label}
-                    >
-                      {crumb.label}
-                    </span>
-                  ) : (
-                    <Link
-                      to={crumb.path}
-                      className="breadcrumb-item link"
-                      title={crumb.label}
-                    >
-                      {crumb.label}
-                    </Link>
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </nav>
+            {/* Breadcrumb Hierarchy */}
+            <nav className="header-breadcrumbs" aria-label="Breadcrumb">
+              <Link
+                to="/workspaces"
+                className="breadcrumb-root-icon"
+                title="Workspaces Root"
+              >
+                <Home size={13} />
+              </Link>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+              {activeBreadcrumbs.map((crumb, idx) => {
+                const isLast = idx === activeBreadcrumbs.length - 1;
+                return (
+                  <React.Fragment key={idx}>
+                    <ChevronRight size={13} className="breadcrumb-separator" />
+                    {isLast || !crumb.path ? (
+                      <span
+                        className={`breadcrumb-item current ${isLast ? 'active' : ''}`}
+                        title={crumb.label}
+                      >
+                        {crumb.label}
+                      </span>
+                    ) : (
+                      <Link
+                        to={crumb.path}
+                        className="breadcrumb-item link"
+                        title={crumb.label}
+                      >
+                        {crumb.label}
+                      </Link>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </nav>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+            <NotificationBell />
             <button
               onClick={() => navigate('/workspaces')}
-              className="btn btn-secondary btn-sm"
-              style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem' }}
+              className="btn btn-secondary btn-sm header-action-btn"
               title="Return to Workspaces Overview"
+              id="header-workspaces-btn"
             >
-              <Briefcase size={13} />
-              <span>Workspaces</span>
+              <Briefcase size={14} />
+              <span className="header-btn-text">Workspaces</span>
             </button>
             <button
               onClick={() => navigate('/settings')}
-              className={`btn btn-secondary btn-sm ${location.pathname === '/settings' ? 'active' : ''}`}
-              style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem' }}
+              className={`btn btn-secondary btn-sm header-action-btn ${location.pathname === '/settings' ? 'active' : ''}`}
               title="Profile & Settings"
               id="header-settings-btn"
             >
-              <Settings size={13} />
-              <span>Settings</span>
+              <Settings size={14} />
+              <span className="header-btn-text">Settings</span>
             </button>
           </div>
         </header>
@@ -273,6 +361,10 @@ export const AppLayout: React.FC = () => {
           <Outlet />
         </div>
       </main>
+
+      {/* Global Workspace-Aware Notion-AI style Assistant */}
+      <GlobalAIAssistant />
     </div>
   );
 };
+

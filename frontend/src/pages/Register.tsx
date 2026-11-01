@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import { Sparkles } from 'lucide-react';
 import { toast } from '../utils/toast';
 
 const Register = () => {
+  const [searchParams] = useSearchParams();
+  const redirectUrl = searchParams.get('redirect') || '';
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,7 +36,8 @@ const Register = () => {
     try {
       await api.post('/auth/register', { name, email, password });
       toast.success('Account Created', 'Registration successful! Please sign in.');
-      navigate('/login');
+      navigate(redirectUrl ? `/login?redirect=${encodeURIComponent(redirectUrl)}` : '/login');
+
     } catch (err: any) {
       const msg = err.response?.data?.detail?.error?.message || 'Registration failed. Please try again.';
       setError(msg);
@@ -118,7 +121,7 @@ const Register = () => {
         </form>
         
         <div className="auth-links">
-          Already have an account? <Link to="/login" style={{ fontWeight: 600 }}>Sign in</Link>
+          Already have an account? <Link to={redirectUrl ? `/login?redirect=${encodeURIComponent(redirectUrl)}` : '/login'} style={{ fontWeight: 600 }}>Sign in</Link>
         </div>
       </div>
     </div>

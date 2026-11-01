@@ -18,6 +18,10 @@ def get_user(db: Session, user_id: str) -> User | None:
     return db.query(User).filter(User.id == user_id).first()
 
 
+get_user_by_id = get_user
+
+
+
 def create_user(db: Session, user_in: UserCreate) -> User:
     db_user = User(
         name=user_in.name,

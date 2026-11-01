@@ -35,6 +35,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import './Settings.css';
+import { SubscriptionButton } from '../components/ui/SubscriptionButton';
 
 type SettingsTab = 'profile' | 'preferences' | 'account' | 'workspaces';
 
@@ -187,6 +188,22 @@ export const Settings: React.FC = () => {
   // ----------------------------------------------------------------------------
   // Preferences Handlers
   // ----------------------------------------------------------------------------
+  const handleSelectTheme = (newTheme: string) => {
+    setTheme(newTheme);
+    let resolved = newTheme;
+    if (resolved === 'system') {
+      resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', resolved);
+    if (resolved === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
   const handleSavePreferences = async () => {
     setSavingPreferences(true);
     const newPrefs = {
@@ -245,14 +262,39 @@ export const Settings: React.FC = () => {
   };
 
   // ----------------------------------------------------------------------------
-  // Account Handlers
-  // ----------------------------------------------------------------------------
-  const handleCopyId = () => {
+  const isPreferencesDirty = React.useMemo(() => {
+    if (!user?.preferences) return false;
+    return (
+      theme !== (user.preferences.theme || 'dark') ||
+      emailNotifications !== (user.preferences.email_notifications ?? true) ||
+      taskUpdates !== (user.preferences.task_updates ?? true) ||
+      meetingReminders !== (user.preferences.meeting_reminders ?? true) ||
+      aiSuggestions !== (user.preferences.ai_suggestions ?? true) ||
+      weeklyDigest !== (user.preferences.weekly_digest ?? false)
+    );
+  }, [user?.preferences, theme, emailNotifications, taskUpdates, meetingReminders, aiSuggestions, weeklyDigest]);
+
+  const handleCopyId = async () => {
     if (!user?.id) return;
-    navigator.clipboard.writeText(user.id);
-    setCopiedId(true);
-    toast.success('Copied', 'User ID copied to clipboard.');
-    setTimeout(() => setCopiedId(false), 2000);
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(user.id);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = user.id;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      setCopiedId(true);
+      toast.success('Copied', 'User ID copied to clipboard.');
+      setTimeout(() => setCopiedId(false), 2000);
+    } catch {
+      toast.error('Copy Failed', 'Unable to copy user ID to clipboard.');
+    }
   };
 
   const handleSignOut = () => {
@@ -536,7 +578,7 @@ export const Settings: React.FC = () => {
             <div className="theme-selector-grid">
               <div
                 className={`theme-card ${theme === 'dark' ? 'active' : ''}`}
-                onClick={() => setTheme('dark')}
+                onClick={() => handleSelectTheme('dark')}
                 id="theme-option-dark"
               >
                 <div className="theme-card-icon-box">
@@ -550,7 +592,7 @@ export const Settings: React.FC = () => {
 
               <div
                 className={`theme-card ${theme === 'light' ? 'active' : ''}`}
-                onClick={() => setTheme('light')}
+                onClick={() => handleSelectTheme('light')}
                 id="theme-option-light"
               >
                 <div className="theme-card-icon-box">
@@ -564,7 +606,7 @@ export const Settings: React.FC = () => {
 
               <div
                 className={`theme-card ${theme === 'system' ? 'active' : ''}`}
-                onClick={() => setTheme('system')}
+                onClick={() => handleSelectTheme('system')}
                 id="theme-option-system"
               >
                 <div className="theme-card-icon-box">
@@ -704,7 +746,7 @@ export const Settings: React.FC = () => {
                 type="button"
                 className="btn btn-primary"
                 onClick={handleSavePreferences}
-                disabled={savingPreferences}
+                disabled={savingPreferences || !isPreferencesDirty}
                 id="save-preferences-btn"
               >
                 <Save size={15} />
@@ -786,6 +828,22 @@ export const Settings: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Subscription & Plans Preview Card */}
+          <div className="settings-card">
+            <div className="settings-card-header">
+              <div>
+                <h2 className="settings-card-title">
+                  <Sparkles size={18} />
+                  <span>Subscription &amp; Plans (Preview)</span>
+                </h2>
+                <p className="settings-card-desc">
+                  Interactive tier preview for upcoming team and enterprise capabilities.
+                </p>
+              </div>
+            </div>
+            <SubscriptionButton />
           </div>
 
           {/* Password Change Card */}

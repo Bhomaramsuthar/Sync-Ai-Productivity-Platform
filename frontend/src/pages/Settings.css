@@ -645,3 +645,84 @@
 .settings-signout-btn:active {
   transform: scale(0.97);
 }
+
+/* Responsive Breakpoints for Settings */
+@media (max-width: 768px) {
+  .settings-container {
+    padding: 1rem 0.5rem 2.5rem 0.5rem;
+  }
+
+  .settings-title {
+    font-size: 1.4rem;
+  }
+
+  .settings-card {
+    padding: 1.25rem 1rem;
+    border-radius: 14px;
+  }
+
+  .settings-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .settings-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .theme-selector-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .account-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-workspace-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.85rem;
+    padding: 1rem;
+  }
+
+  .settings-workspace-card > div:last-child {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+  }
+
+  .preference-item {
+    padding: 0.85rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .avatar-section-wrapper {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1.25rem;
+  }
+
+  .avatar-actions-group {
+    align-items: center;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .avatar-hints {
+    text-align: center;
+  }
+
+  .preference-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .preference-item .switch-label {
+    align-self: flex-end;
+  }
+}
+

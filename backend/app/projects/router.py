@@ -9,6 +9,8 @@ from .schemas import ProjectCreate, ProjectUpdate, ProjectResponse
 
 router = APIRouter()
 
+from app.core.realtime import workspace_realtime_manager
+
 @router.post("/workspaces/{workspace_id}/projects", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
 def create_project(
     workspace_id: str,
@@ -16,7 +18,13 @@ def create_project(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    return service.create_project(db, workspace_id, current_user.id, data)
+    project = service.create_project(db, workspace_id, current_user.id, data)
+    workspace_realtime_manager.broadcast_sync(
+        workspace_id,
+        "project:created",
+        ProjectResponse.model_validate(project).model_dump(),
+    )
+    return project
 
 @router.get("/workspaces/{workspace_id}/projects", response_model=List[ProjectResponse])
 def list_projects(
@@ -41,7 +49,13 @@ def update_project(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    return service.update_project(db, project_id, current_user.id, data)
+    project = service.update_project(db, project_id, current_user.id, data)
+    workspace_realtime_manager.broadcast_sync(
+        project.workspace_id,
+        "project:updated",
+        ProjectResponse.model_validate(project).model_dump(),
+    )
+    return project
 
 @router.delete("/projects/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_project(
@@ -49,7 +63,14 @@ def delete_project(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    project = service.get_project(db, project_id, current_user.id)
+    workspace_id = project.workspace_id
     service.delete_project(db, project_id, current_user.id)
+    workspace_realtime_manager.broadcast_sync(
+        workspace_id,
+        "project:deleted",
+        {"id": project_id, "workspace_id": workspace_id},
+    )
 
 from typing import Optional
 from .schemas import ProjectActivityResponse, ProjectInsights

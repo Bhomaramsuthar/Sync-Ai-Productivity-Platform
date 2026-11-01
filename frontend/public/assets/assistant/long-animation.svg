@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none">
+  <defs>
+    <linearGradient id="bgGradHover" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#9333ea"/>
+    </linearGradient>
+    <filter id="glowHover" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="0.8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    <style>
+      .face-pulse {
+        animation: faceBreathing 3.6s ease-in-out infinite;
+        transform-origin: 16px 16px;
+      }
+      .eyes-wrapper {
+        animation: lookAroundLong 3.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        transform-origin: 16px 14px;
+      }
+      .eye-blink {
+        animation: blinkMotion 3.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        transform-origin: center;
+      }
+      .left-eye {
+        transform-origin: 10.5px 14px;
+      }
+      .right-eye {
+        transform-origin: 21.5px 14px;
+      }
+      .mouth-morph {
+        animation: smileMorph 3.6s ease-in-out infinite;
+        transform-origin: 16px 21px;
+      }
+      .sparkle-pulse {
+        animation: sparkleShimmer 1.8s ease-in-out infinite alternate;
+        transform-origin: 25px 6.8px;
+      }
+
+      @keyframes lookAroundLong {
+        0%, 100% {
+          transform: translate(0px, 0px);
+        }
+        18% {
+          transform: translate(-2px, -0.8px);
+        }
+        32% {
+          transform: translate(-1.8px, 1px);
+        }
+        48% {
+          transform: translate(0px, 0px);
+        }
+        64% {
+          transform: translate(2.2px, -1px);
+        }
+        80% {
+          transform: translate(1.6px, 0.8px);
+        }
+        92% {
+          transform: translate(0px, 0px);
+        }
+      }
+
+      @keyframes blinkMotion {
+        0%, 46%, 52%, 100% {
+          transform: scaleY(1);
+        }
+        49% {
+          transform: scaleY(0.12);
+        }
+      }
+
+      @keyframes smileMorph {
+        0%, 100% {
+          transform: scale(1);
+        }
+        25% {
+          transform: scale(1.08, 0.95);
+        }
+        70% {
+          transform: scale(0.96, 1.05);
+        }
+      }
+
+      @keyframes sparkleShimmer {
+        0% {
+          transform: scale(0.85) rotate(-5deg);
+          opacity: 0.75;
+        }
+        100% {
+          transform: scale(1.2) rotate(12deg);
+          opacity: 1;
+        }
+      }
+
+      @keyframes faceBreathing {
+        0%, 100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.02);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .face-pulse, .eyes-wrapper, .eye-blink, .mouth-morph, .sparkle-pulse {
+          animation: none !important;
+        }
+      }
+    </style>
+  </defs>
+
+  <!-- Face Container with breathing animation -->
+  <g class="face-pulse">
+    <rect x="2" y="2" width="28" height="28" rx="8" fill="url(#bgGradHover)" stroke="#c7d2fe" stroke-opacity="0.6" stroke-width="1.35"/>
+  </g>
+
+  <!-- AI Sparkle with Shimmer -->
+  <path class="sparkle-pulse" d="M25 4.5 C25 5.8 26 6.8 27.3 6.8 C26 6.8 25 7.8 25 9.1 C25 7.8 24 6.8 22.7 6.8 C24 6.8 25 5.8 25 4.5 Z" fill="#fef08a"/>
+
+  <!-- Eyes with Looking Around & Blinking -->
+  <g class="eyes-wrapper">
+    <!-- Left Eye -->
+    <ellipse class="eye-blink left-eye" cx="10.5" cy="14" rx="2.5" ry="3.5" fill="#ffffff" filter="url(#glowHover)"/>
+    <circle cx="11.5" cy="12.8" r="0.9" fill="#e0e7ff"/>
+
+    <!-- Right Eye -->
+    <ellipse class="eye-blink right-eye" cx="21.5" cy="14" rx="2.5" ry="3.5" fill="#ffffff" filter="url(#glowHover)"/>
+    <circle cx="22.5" cy="12.8" r="0.9" fill="#e0e7ff"/>
+  </g>
+
+  <!-- Friendly Morphing Smile -->
+  <path class="mouth-morph" d="M 12 21 Q 16 24 20 21" stroke="#f8fafc" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+</svg>

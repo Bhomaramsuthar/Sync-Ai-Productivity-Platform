@@ -10,6 +10,7 @@ import {
   Plus,
   Clock,
 } from 'lucide-react';
+import { KineticTextReveal } from '../components/ui/KineticTextReveal';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -34,7 +35,16 @@ const Dashboard: React.FC = () => {
             <Sparkles size={24} />
           </div>
           <div>
-            <h1 className="page-hero-title">Welcome back, {user?.name || 'Teammate'}</h1>
+            <KineticTextReveal
+              text={`Welcome back, ${user?.name || 'Teammate'}`}
+              as="h1"
+              className="page-hero-title"
+              splitBy="words"
+              direction="up"
+              distance={18}
+              stagger={0.05}
+              blur
+            />
             <p className="page-hero-subtitle">
               Your AI-driven collaboration workspace. Organize tasks, host LiveKit meetings, and transcribe action items with Groq Whisper.
             </p>

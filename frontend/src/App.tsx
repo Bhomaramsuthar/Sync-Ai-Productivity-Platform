@@ -14,6 +14,7 @@ import { MeetingsDashboard } from './pages/MeetingsDashboard';
 import { MeetingDetail } from './pages/MeetingDetail';
 import { MeetingRoom } from './pages/MeetingRoom';
 import Settings from './pages/Settings';
+import JoinWorkspace from './pages/JoinWorkspace';
 import { Toaster } from 'sileo';
 import 'sileo/styles.css';
 import './index.css';
@@ -28,6 +29,9 @@ function App() {
           <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/join" element={<JoinWorkspace />} />
+          <Route path="/join/:token" element={<JoinWorkspace />} />
+
           
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Navigate to="/workspaces" replace />} />

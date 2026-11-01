@@ -25,11 +25,13 @@ export interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (token: string, userData: User) => void;
+  isAuthenticated: boolean;
+  login: (token: string, userData: User, redirectTo?: string) => void;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
   refreshUser: () => Promise<User | null>;
 }
+
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -63,10 +65,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const login = (token: string, userData: User) => {
+  // Synchronize and apply user appearance theme to DOM
+  useEffect(() => {
+    const applyTheme = (themeName?: string) => {
+      let resolved = themeName || 'dark';
+      if (resolved === 'system') {
+        resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.documentElement.setAttribute('data-theme', resolved);
+      if (resolved === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+      } else {
+        document.documentElement.classList.add('light');
+        document.documentElement.classList.remove('dark');
+      }
+    };
+
+    applyTheme(user?.preferences?.theme);
+
+    if (user?.preferences?.theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const listener = () => applyTheme('system');
+      mediaQuery.addEventListener('change', listener);
+      return () => mediaQuery.removeEventListener('change', listener);
+    }
+  }, [user?.preferences?.theme]);
+
+  const login = (token: string, userData: User, redirectTo?: string) => {
     localStorage.setItem('token', token);
     setUser(userData);
-    navigate('/dashboard');
+    if (redirectTo) {
+      navigate(redirectTo);
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   const logout = () => {
@@ -84,11 +117,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, updateUser, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, isAuthenticated: !!user, login, logout, updateUser, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
 };
+
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

@@ -1,5 +1,5 @@
 import datetime
-from typing import List, Optional
+from typing import List, Optional, Any
 from pydantic import BaseModel, Field, ConfigDict
 
 
@@ -30,8 +30,9 @@ class MessageResponse(BaseModel):
 class ConversationResponse(BaseModel):
     id: str
     user_id: str
-    workspace_id: str
-    project_id: str
+    workspace_id: Optional[str] = None
+    project_id: Optional[str] = None
+    scope: str = "PROJECT"
     title: str
     created_at: Optional[datetime.datetime] = None
     updated_at: Optional[datetime.datetime] = None
@@ -44,8 +45,9 @@ class ConversationResponse(BaseModel):
 class ConversationDetailResponse(BaseModel):
     id: str
     user_id: str
-    workspace_id: str
-    project_id: str
+    workspace_id: Optional[str] = None
+    project_id: Optional[str] = None
+    scope: str = "PROJECT"
     title: str
     created_at: Optional[datetime.datetime] = None
     updated_at: Optional[datetime.datetime] = None
@@ -71,6 +73,93 @@ class ChatQuestionResponse(BaseModel):
     conversation_id: str
     user_message: MessageResponse
     assistant_message: MessageResponse
+
+
+# ==============================================================================
+# Global Workspace-Aware Assistant Schemas
+# ==============================================================================
+
+class AssistantCitationItem(BaseModel):
+    source_id: str
+    source_type: str  # DOCUMENT, TASK, PROJECT, MEETING, CALENDAR_EVENT, WORKSPACE, ACTIVITY
+    title: str
+    excerpt: str
+    url: Optional[str] = None
+    route: Optional[str] = None
+    metadata: Optional[dict] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.source_type:
+            self.source_type = self.source_type.lower()
+        if self.url and not self.route:
+            self.route = self.url
+        elif self.route and not self.url:
+            self.url = self.route
+
+
+class AssistantMessageResponse(BaseModel):
+    id: str
+    conversation_id: str
+    sender_role: str
+    content: str
+    citations: List[AssistantCitationItem] = Field(default_factory=list)
+    created_at: Optional[datetime.datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AssistantConversationResponse(BaseModel):
+    id: str
+    user_id: str
+    scope: str  # GLOBAL, WORKSPACE, PROJECT
+    workspace_id: Optional[str] = None
+    project_id: Optional[str] = None
+    title: str
+    created_at: Optional[datetime.datetime] = None
+    updated_at: Optional[datetime.datetime] = None
+    message_count: int = 0
+    last_message_preview: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AssistantConversationDetailResponse(BaseModel):
+    id: str
+    user_id: str
+    scope: str
+    workspace_id: Optional[str] = None
+    project_id: Optional[str] = None
+    title: str
+    created_at: Optional[datetime.datetime] = None
+    updated_at: Optional[datetime.datetime] = None
+    messages: List[AssistantMessageResponse] = Field(default_factory=list)
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CreateAssistantConversationRequest(BaseModel):
+    scope: str = Field(default="GLOBAL", description="GLOBAL, WORKSPACE, or PROJECT")
+    workspace_id: Optional[str] = None
+    project_id: Optional[str] = None
+    title: Optional[str] = Field(default="New Chat", max_length=255)
+    initial_question: Optional[str] = Field(default=None, max_length=2000)
+    current_page_context: Optional[str] = Field(default=None, max_length=1000)
+
+
+class SubmitAssistantQuestionRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=2000)
+    current_page_context: Optional[str] = Field(default=None, max_length=1000)
+
+
+class SubmitAssistantQuestionResponse(BaseModel):
+    conversation_id: str
+    user_message: AssistantMessageResponse
+    assistant_message: AssistantMessageResponse
+    scope: Optional[str] = "GLOBAL"
+    citations: List[AssistantCitationItem] = Field(default_factory=list)
+    suggested_followups: List[str] = Field(default_factory=list)
 
 
 # ==============================================================================

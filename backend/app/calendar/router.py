@@ -8,6 +8,8 @@ from app.users.models import User
 from . import service
 from .schemas import CalendarEventCreate, CalendarEventUpdate, CalendarEventRead
 
+from app.core.realtime import workspace_realtime_manager
+
 router = APIRouter()
 
 
@@ -22,7 +24,13 @@ def create_event(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return service.create_event(db, workspace_id, current_user.id, data)
+    event = service.create_event(db, workspace_id, current_user.id, data)
+    workspace_realtime_manager.broadcast_sync(
+        workspace_id,
+        "calendar_event:created",
+        CalendarEventRead.model_validate(event).model_dump(),
+    )
+    return event
 
 
 @router.get(
@@ -66,7 +74,13 @@ def update_event(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return service.update_event(db, event_id, current_user.id, data)
+    event = service.update_event(db, event_id, current_user.id, data)
+    workspace_realtime_manager.broadcast_sync(
+        event.workspace_id,
+        "calendar_event:updated",
+        CalendarEventRead.model_validate(event).model_dump(),
+    )
+    return event
 
 
 @router.delete(
@@ -78,5 +92,12 @@ def delete_event(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    event = service.get_event_for_member(db, event_id, current_user.id)
+    workspace_id = event.workspace_id
     service.delete_event(db, event_id, current_user.id)
+    workspace_realtime_manager.broadcast_sync(
+        workspace_id,
+        "calendar_event:deleted",
+        {"id": event_id, "workspace_id": workspace_id},
+    )
     return Response(status_code=status.HTTP_204_NO_CONTENT)

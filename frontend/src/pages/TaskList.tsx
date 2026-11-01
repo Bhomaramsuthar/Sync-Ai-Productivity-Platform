@@ -8,6 +8,7 @@ import { AITaskAssistantModal } from '../components/AITaskAssistantModal';
 import { SelectBox } from '../components/ui/select';
 import { productivityService } from '../services/productivityService';
 import { toast } from '../utils/toast';
+import { useWorkspaceRealtime } from '../utils/useWorkspaceRealtime';
 
 const TaskList = ({ project }: { project: Project }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -55,6 +56,30 @@ const TaskList = ({ project }: { project: Project }) => {
   useEffect(() => {
     loadTasks().finally(() => setLoading(false));
   }, [loadTasks]);
+
+  // Real-time synchronization for tasks in this workspace
+  useWorkspaceRealtime(project.workspace_id, {
+    'task:created': (payload) => {
+      if (payload?.project_id === project.id) {
+        loadTasks();
+      }
+    },
+    'task:updated': (payload) => {
+      if (payload?.project_id === project.id) {
+        loadTasks();
+        setDetailTask(prev => (prev && prev.id === payload.id ? { ...prev, ...payload } : prev));
+      }
+    },
+    'task:deleted': (payload) => {
+      if (payload?.project_id === project.id || tasks.some(t => t.id === payload?.id)) {
+        setTasks(prev => prev.filter(t => t.id !== payload.id));
+        setDetailTask(prev => (prev && prev.id === payload.id ? null : prev));
+      }
+    },
+    onReconnect: () => {
+      loadTasks();
+    }
+  });
 
   const handleAutoDraftDescription = async () => {
     if (!formData.title.trim()) {
@@ -181,13 +206,13 @@ const TaskList = ({ project }: { project: Project }) => {
 
   return (
     <div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.65rem', flex: 1, minWidth: '280px' }}>
-          <div style={{ position: 'relative', minWidth: '240px', flex: '1 1 240px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.85rem', marginBottom: '1.25rem' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.65rem', flex: '1 1 260px', minWidth: 0, width: '100%' }}>
+          <div style={{ position: 'relative', minWidth: '180px', flex: '1 1 180px', maxWidth: '100%' }}>
             <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
             <input 
               className="form-input" 
-              style={{ paddingLeft: '2.25rem' }}
+              style={{ paddingLeft: '2.25rem', height: 40 }}
               placeholder="Search tasks..." 
               value={search} 
               onChange={e => setSearch(e.target.value)} 
@@ -204,7 +229,7 @@ const TaskList = ({ project }: { project: Project }) => {
               { value: 'DONE', label: 'Done' },
             ]}
             placeholder="All Statuses"
-            style={{ width: 'auto', minWidth: '135px' }}
+            style={{ width: 'auto', minWidth: '120px' }}
           />
           <SelectBox
             value={filterPriority}
@@ -217,10 +242,10 @@ const TaskList = ({ project }: { project: Project }) => {
               { value: 'URGENT', label: 'Urgent' },
             ]}
             placeholder="All Priorities"
-            style={{ width: 'auto', minWidth: '135px' }}
+            style={{ width: 'auto', minWidth: '120px' }}
           />
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
           <button
             className="btn btn-secondary"
             onClick={() => {

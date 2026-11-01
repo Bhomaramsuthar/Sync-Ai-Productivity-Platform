@@ -29,7 +29,7 @@ const ProjectOverview = ({ project }: { project: Project }) => {
           <ProjectInsights projectId={project.id} />
         </div>
         <div>
-          <ProjectActivityFeed projectId={project.id} />
+          <ProjectActivityFeed projectId={project.id} workspaceId={project.workspace_id} />
         </div>
       </div>
     </div>

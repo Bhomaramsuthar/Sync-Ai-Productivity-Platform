@@ -1,0 +1,123 @@
+/* ==========================================================================
+   Animated AI Assistant Icon — Component Styles
+   ========================================================================== */
+
+.animated-assistant-icon-root {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  border-radius: 25%;
+  user-select: none;
+  flex-shrink: 0;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s ease;
+  line-height: 0;
+}
+
+.animated-assistant-icon-root.state-hover {
+  transform: scale(1.05);
+  filter: drop-shadow(0 0 6px rgba(165, 180, 252, 0.45));
+}
+
+.animated-assistant-icon-root.state-idle {
+  filter: drop-shadow(0 0 4px rgba(129, 140, 248, 0.35));
+}
+
+.animated-assistant-media {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  pointer-events: none; /* Prevents media from intercepting parent button pointer events */
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Accessibility: Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .animated-assistant-icon-root,
+  .animated-assistant-media {
+    transition: none !important;
+    transform: none !important;
+    animation: none !important;
+  }
+}
+
+/* ---- Operational State Badges ---- */
+.ai-sequence-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #ffffff;
+  padding: 1px 5px;
+  border-radius: 8px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.45);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  animation: ai-badge-bounce 0.3s ease-out;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes ai-badge-bounce {
+  0% { transform: scale(0.7) translateY(2px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.ai-typing-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background: rgba(30, 41, 59, 0.95);
+  color: #818cf8;
+  border: 1px solid rgba(129, 140, 248, 0.4);
+  border-radius: 6px;
+  padding: 0 4px;
+  font-size: 0.6rem;
+  letter-spacing: 1px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.ai-success-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #10b981;
+  color: #ffffff;
+  border-radius: 50%;
+  width: 15px;
+  height: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.62rem;
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.ai-error-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: #ffffff;
+  border-radius: 50%;
+  width: 15px;
+  height: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+  pointer-events: none;
+  z-index: 2;
+}

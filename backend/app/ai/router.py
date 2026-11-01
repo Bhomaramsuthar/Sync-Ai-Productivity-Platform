@@ -1,11 +1,12 @@
 import logging
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.auth.dependencies import get_current_user
 from app.users.models import User
+from .models import Conversation
 from . import service
 from .schemas import (
     ConversationResponse,
@@ -321,5 +322,207 @@ def get_project_insights_endpoint(
     """
     return productivity_service.get_project_productivity_insights(
         db=db, project_id=project_id, user_id=current_user.id
+    )
+
+
+# ==============================================================================
+# Global Workspace-Aware Assistant Endpoints
+# ==============================================================================
+
+from .global_assistant import GlobalAssistantService
+from .schemas import (
+    AssistantCitationItem,
+    AssistantMessageResponse,
+    AssistantConversationResponse,
+    AssistantConversationDetailResponse,
+    CreateAssistantConversationRequest,
+    SubmitAssistantQuestionRequest,
+    SubmitAssistantQuestionResponse,
+)
+
+
+@router.post(
+    "/ai/assistant/conversations",
+    response_model=AssistantConversationDetailResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new global or scoped assistant conversation",
+)
+def create_assistant_conversation(
+    payload: CreateAssistantConversationRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Creates a new AI Assistant conversation scoped to GLOBAL, WORKSPACE, or PROJECT.
+    If an initial question is supplied, generates the initial grounded response.
+    """
+    conv = GlobalAssistantService.create_conversation(
+        db=db,
+        user=current_user,
+        scope=payload.scope,
+        workspace_id=payload.workspace_id,
+        project_id=payload.project_id,
+        title=payload.title,
+    )
+
+    messages: List[AssistantMessageResponse] = []
+    if payload.initial_question and payload.initial_question.strip():
+        user_msg, asst_msg, _ = GlobalAssistantService.submit_question(
+            db=db,
+            conversation_id=conv.id,
+            user=current_user,
+            question=payload.initial_question,
+            current_page_context=payload.current_page_context,
+        )
+        messages = [
+            GlobalAssistantService.format_message_response(user_msg),
+            GlobalAssistantService.format_message_response(asst_msg),
+        ]
+
+    return AssistantConversationDetailResponse(
+        id=conv.id,
+        user_id=conv.user_id,
+        scope=conv.scope or "GLOBAL",
+        workspace_id=conv.workspace_id,
+        project_id=conv.project_id,
+        title=conv.title,
+        created_at=conv.created_at,
+        updated_at=conv.updated_at,
+        messages=messages,
+    )
+
+
+@router.get(
+    "/ai/assistant/conversations",
+    response_model=List[AssistantConversationResponse],
+    summary="List the authenticated user's assistant conversations",
+)
+def list_assistant_conversations(
+    scope: Optional[str] = None,
+    workspace_id: Optional[str] = None,
+    project_id: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Returns all AI Assistant conversations belonging to the authenticated user.
+    Supports filtering by scope, workspace_id, and project_id.
+    """
+    return GlobalAssistantService.list_conversations(
+        db=db,
+        user=current_user,
+        scope=scope,
+        workspace_id=workspace_id,
+        project_id=project_id,
+    )
+
+
+@router.get(
+    "/ai/assistant/conversations/{conversation_id}",
+    response_model=AssistantConversationDetailResponse,
+    summary="Get assistant conversation details and message history",
+)
+def get_assistant_conversation(
+    conversation_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieves the conversation details and full message history with citations.
+    """
+    conv = GlobalAssistantService.get_conversation(db, conversation_id, current_user)
+    return AssistantConversationDetailResponse(
+        id=conv.id,
+        user_id=conv.user_id,
+        scope=conv.scope or "GLOBAL",
+        workspace_id=conv.workspace_id,
+        project_id=conv.project_id,
+        title=conv.title,
+        created_at=conv.created_at,
+        updated_at=conv.updated_at,
+        messages=[GlobalAssistantService.format_message_response(m) for m in conv.messages],
+    )
+
+
+@router.patch(
+    "/ai/assistant/conversations/{conversation_id}",
+    response_model=AssistantConversationResponse,
+    summary="Rename an assistant conversation",
+)
+def rename_assistant_conversation(
+    conversation_id: str,
+    payload: UpdateConversationRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Renames an existing assistant conversation.
+    """
+    conv = GlobalAssistantService.update_conversation(db, conversation_id, current_user, payload.title)
+    return AssistantConversationResponse(
+        id=conv.id,
+        user_id=conv.user_id,
+        scope=conv.scope or "GLOBAL",
+        workspace_id=conv.workspace_id,
+        project_id=conv.project_id,
+        title=conv.title,
+        created_at=conv.created_at,
+        updated_at=conv.updated_at,
+        message_count=len(conv.messages),
+        last_message_preview=conv.messages[-1].content[:80] + "..." if conv.messages else None,
+    )
+
+
+@router.delete(
+    "/ai/assistant/conversations/{conversation_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete an assistant conversation",
+)
+def delete_assistant_conversation(
+    conversation_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Permanently deletes an assistant conversation.
+    """
+    GlobalAssistantService.delete_conversation(db, conversation_id, current_user)
+    return None
+
+
+@router.post(
+    "/ai/assistant/conversations/{conversation_id}/messages",
+    response_model=SubmitAssistantQuestionResponse,
+    summary="Submit a question to an assistant conversation",
+)
+def submit_assistant_question(
+    conversation_id: str,
+    payload: SubmitAssistantQuestionRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Submits a user question to the assistant conversation.
+    Retrieves authorized structured facts and semantic document passages,
+    generates grounded AI response with structured citations, and returns the chat turn.
+    """
+    user_msg, asst_msg, _ = GlobalAssistantService.submit_question(
+        db=db,
+        conversation_id=conversation_id,
+        user=current_user,
+        question=payload.question,
+        current_page_context=payload.current_page_context,
+    )
+    conv = db.query(Conversation).filter(Conversation.id == conversation_id).first()
+    scope = conv.scope if conv else "GLOBAL"
+    formatted_asst = GlobalAssistantService.format_message_response(asst_msg)
+
+    return SubmitAssistantQuestionResponse(
+        conversation_id=conversation_id,
+        user_message=GlobalAssistantService.format_message_response(user_msg),
+        assistant_message=formatted_asst,
+        scope=scope,
+        citations=formatted_asst.citations,
+        suggested_followups=[],
     )
 

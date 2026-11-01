@@ -215,6 +215,7 @@ export const DocumentChat: React.FC<DocumentChatProps> = ({ project }) => {
 
   // Selected citation inspector
   const [inspectingCitation, setInspectingCitation] = useState<CitationItem | null>(null);
+  const [showMobileList, setShowMobileList] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -270,6 +271,7 @@ export const DocumentChat: React.FC<DocumentChatProps> = ({ project }) => {
     try {
       const res = await chatService.getConversation(convId);
       setActiveConversation(res.data);
+      setShowMobileList(false);
       if (routeConversationId !== convId) {
         navigate(`/projects/${project.id}/chat/${convId}`, { replace: true });
       }
@@ -448,22 +450,10 @@ export const DocumentChat: React.FC<DocumentChatProps> = ({ project }) => {
   };
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '280px 1fr',
-        gap: 'var(--space-4)',
-        height: 'calc(100vh - 290px)',
-        minHeight: '460px',
-        maxHeight: 'calc(100vh - 290px)',
-        backgroundColor: 'var(--bg-surface)',
-        border: '1px solid var(--border-subtle)',
-        borderRadius: 'var(--radius-lg)',
-        overflow: 'hidden',
-      }}
-    >
+    <div className="doc-chat-split-container">
       {/* Sidebar: Conversation List */}
       <div
+        className={`doc-chat-sidebar ${showMobileList ? 'show-mobile' : ''}`}
         style={{
           borderRight: '1px solid var(--border-subtle)',
           display: 'flex',
@@ -488,14 +478,27 @@ export const DocumentChat: React.FC<DocumentChatProps> = ({ project }) => {
             <MessageSquare size={18} style={{ color: 'var(--accent-primary)' }} />
             <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Document Chat</span>
           </div>
-          <button
-            className="btn btn-primary"
-            style={{ padding: '0.35rem 0.65rem', fontSize: '0.8rem' }}
-            onClick={handleStartNewChat}
-            title="Start new conversation"
-          >
-            <Plus size={14} /> New
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <button
+              className="btn btn-primary"
+              style={{ padding: '0.35rem 0.65rem', fontSize: '0.8rem' }}
+              onClick={() => {
+                setShowMobileList(false);
+                handleStartNewChat();
+              }}
+              title="Start new conversation"
+            >
+              <Plus size={14} /> New
+            </button>
+            <button
+              className="btn btn-ghost btn-sm mobile-chat-list-btn"
+              onClick={() => setShowMobileList(false)}
+              aria-label="Close chat list"
+              style={{ padding: '4px 6px', color: '#94a3b8' }}
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
 
         {/* Conversation List */}
@@ -639,6 +642,7 @@ export const DocumentChat: React.FC<DocumentChatProps> = ({ project }) => {
 
       {/* Main Chat Area */}
       <div
+        className={`doc-chat-main ${!showMobileList ? 'show-mobile' : ''}`}
         style={{
           display: 'flex',
           flexDirection: 'column',
@@ -651,30 +655,45 @@ export const DocumentChat: React.FC<DocumentChatProps> = ({ project }) => {
         {/* Top Header of Active Chat */}
         <div
           style={{
-            padding: 'var(--space-3) var(--space-5)',
+            padding: 'var(--space-3) var(--space-4)',
             borderBottom: '1px solid var(--border-subtle)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             backgroundColor: 'var(--bg-surface)',
             flexShrink: 0,
+            gap: '0.65rem',
+            flexWrap: 'wrap',
           }}
         >
-          <div>
-            <h2 style={{ fontSize: '1rem', fontWeight: 600 }}>
-              {activeConversation ? activeConversation.title : 'Document AI Assistant'}
-            </h2>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-              Answers strictly grounded in indexed project documents with passage citations
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+            <button
+              className="btn btn-secondary btn-sm mobile-chat-list-btn"
+              onClick={() => setShowMobileList(true)}
+              title="View all conversations"
+              type="button"
+              style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', gap: '4px', flexShrink: 0 }}
+            >
+              <MessageSquare size={13} />
+              <span>Chats ({conversations.length})</span>
+            </button>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <h2 style={{ fontSize: '1rem', fontWeight: 600, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {activeConversation ? activeConversation.title : 'Document AI Assistant'}
+              </h2>
+              <p style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                Answers strictly grounded in indexed project documents with passage citations
+              </p>
+            </div>
           </div>
           <button
-            className="btn btn-ghost"
-            style={{ fontSize: '0.8rem', gap: '4px' }}
+            className="btn btn-ghost btn-sm"
+            style={{ fontSize: '0.75rem', gap: '4px', flexShrink: 0 }}
             onClick={() => navigate(`/projects/${project.id}/documents`)}
             title="Inspect project documents"
           >
-            <FileText size={14} /> View Document Library
+            <FileText size={13} />
+            <span className="header-btn-text">Library</span>
           </button>
         </div>
 

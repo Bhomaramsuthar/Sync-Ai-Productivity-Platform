@@ -575,3 +575,81 @@
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* ==========================================================================
+   Document Chat Responsive Split Pane & Mobile Document Library
+   ========================================================================== */
+.doc-chat-split-container {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: var(--space-4);
+  height: calc(100vh - 270px);
+  min-height: 480px;
+  max-height: calc(100vh - 270px);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: relative;
+}
+
+.mobile-chat-list-btn {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .doc-chat-split-container {
+    grid-template-columns: 1fr;
+    height: calc(100dvh - 220px);
+    max-height: calc(100dvh - 220px);
+    min-height: 400px;
+  }
+
+  .mobile-chat-list-btn {
+    display: inline-flex !important;
+  }
+
+  .doc-chat-sidebar {
+    display: none !important;
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    width: 100% !important;
+  }
+
+  .doc-chat-sidebar.show-mobile {
+    display: flex !important;
+  }
+
+  .doc-chat-main {
+    display: none !important;
+    width: 100% !important;
+  }
+
+  .doc-chat-main.show-mobile {
+    display: flex !important;
+  }
+
+  .doc-filter-bar {
+    padding: 0.65rem 0.85rem;
+    gap: 0.5rem;
+  }
+
+  .doc-filter-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .doc-type-pills {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+
+  .semantic-search-hero-card {
+    padding: 1.15rem 1rem;
+  }
+
+  .semantic-search-box {
+    padding: 4px 6px 4px 12px;
+  }
+}

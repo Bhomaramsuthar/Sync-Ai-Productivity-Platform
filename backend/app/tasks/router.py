@@ -8,6 +8,8 @@ from . import service
 from .schemas import TaskCreate, TaskUpdate, TaskResponse
 from .models import TaskStatusEnum, TaskPriorityEnum
 
+from app.core.realtime import workspace_realtime_manager
+
 router = APIRouter()
 
 @router.post("/projects/{project_id}/tasks", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
@@ -17,7 +19,13 @@ def create_task(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    return service.create_task(db, project_id, current_user.id, data)
+    task = service.create_task(db, project_id, current_user.id, data)
+    workspace_realtime_manager.broadcast_sync(
+        task.project.workspace_id,
+        "task:created",
+        TaskResponse.model_validate(task).model_dump(),
+    )
+    return task
 
 @router.get("/projects/{project_id}/tasks", response_model=List[TaskResponse])
 def list_tasks(
@@ -47,7 +55,13 @@ def update_task(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    return service.update_task(db, task_id, current_user.id, data)
+    task = service.update_task(db, task_id, current_user.id, data)
+    workspace_realtime_manager.broadcast_sync(
+        task.project.workspace_id,
+        "task:updated",
+        TaskResponse.model_validate(task).model_dump(),
+    )
+    return task
 
 @router.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_task(
@@ -55,4 +69,12 @@ def delete_task(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    task, _ = service.get_task_for_member(db, task_id, current_user.id)
+    workspace_id = task.project.workspace_id
+    project_id = task.project_id
     service.delete_task(db, task_id, current_user.id)
+    workspace_realtime_manager.broadcast_sync(
+        workspace_id,
+        "task:deleted",
+        {"id": task_id, "project_id": project_id, "workspace_id": workspace_id},
+    )

@@ -589,3 +589,95 @@
   background: rgba(16, 185, 129, 0.15);
   color: #34d399;
 }
+
+/* ==========================================================================
+   Meeting Room Responsive Breakpoints
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .room-side-drawer {
+    width: 320px;
+  }
+}
+
+@media (max-width: 768px) {
+  .room-navbar {
+    padding: 0 0.85rem;
+    height: 54px;
+  }
+
+  .room-meeting-title {
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.85rem;
+  }
+
+  .room-stage-container {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .room-control-dock {
+    height: 62px;
+    padding: 0 0.5rem;
+    gap: 0.4rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    justify-content: flex-start;
+    scrollbar-width: none;
+  }
+
+  .room-control-dock::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dock-btn {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+  }
+
+  .dock-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .dock-btn.btn-leave-call {
+    padding: 0 0.85rem;
+    height: 40px;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .room-side-drawer {
+    width: 100% !important;
+    max-width: 100vw !important;
+    position: absolute;
+    inset: 0;
+    z-index: 45;
+  }
+}
+
+@media (max-width: 480px) {
+  .room-nav-center {
+    display: none;
+  }
+
+  .dock-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+  }
+
+  .dock-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .dock-btn.btn-leave-call {
+    padding: 0 0.65rem;
+    height: 36px;
+    font-size: 0.7rem;
+  }
+}

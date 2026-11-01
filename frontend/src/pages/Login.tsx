@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { Sparkles } from 'lucide-react';
 import { toast } from '../utils/toast';
 
 const Login = () => {
+  const [searchParams] = useSearchParams();
+  const redirectUrl = searchParams.get('redirect') || '';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -20,7 +22,8 @@ const Login = () => {
     try {
       const response = await api.post('/auth/login', { email, password });
       toast.success('Welcome Back', `Logged in as ${response.data.user.name || email}`);
-      login(response.data.access_token, response.data.user);
+      login(response.data.access_token, response.data.user, redirectUrl || undefined);
+
     } catch (err: any) {
       const msg = err.response?.data?.detail?.error?.message || 'Login failed. Please check your credentials.';
       setError(msg);
@@ -78,7 +81,7 @@ const Login = () => {
         </form>
         
         <div className="auth-links">
-          Don't have an account? <Link to="/register" style={{ fontWeight: 600 }}>Create one</Link>
+          Don't have an account? <Link to={redirectUrl ? `/register?redirect=${encodeURIComponent(redirectUrl)}` : '/register'} style={{ fontWeight: 600 }}>Create one</Link>
         </div>
       </div>
     </div>

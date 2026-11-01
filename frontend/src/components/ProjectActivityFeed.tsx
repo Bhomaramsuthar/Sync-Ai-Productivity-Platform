@@ -1,29 +1,47 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { projectService, type ProjectActivity } from '../services/projectService';
+import { useWorkspaceRealtime } from '../utils/useWorkspaceRealtime';
 import './ProjectActivityFeed.css';
 
 interface Props {
   projectId: string;
+  workspaceId?: string;
 }
 
-export const ProjectActivityFeed: React.FC<Props> = ({ projectId }) => {
+export const ProjectActivityFeed: React.FC<Props> = ({ projectId, workspaceId }) => {
   const [activities, setActivities] = useState<ProjectActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchActivities = async () => {
-      try {
-        const response = await projectService.getActivity(projectId);
-        setActivities(response.data);
-      } catch (err: any) {
-        setError(err.response?.data?.error?.message || 'Failed to load activity feed');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchActivities();
+  const fetchActivities = useCallback(async () => {
+    try {
+      const response = await projectService.getActivity(projectId);
+      setActivities(response.data);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to load activity feed');
+    } finally {
+      setLoading(false);
+    }
   }, [projectId]);
+
+  useEffect(() => {
+    fetchActivities();
+  }, [fetchActivities]);
+
+  // Real-time synchronization for activities
+  useWorkspaceRealtime(workspaceId || null, {
+    'activity:created': (payload) => {
+      if (payload?.project_id === projectId) {
+        setActivities(prev => {
+          if (prev.some(a => a.id === payload.id)) return prev;
+          return [payload, ...prev];
+        });
+      }
+    },
+    onReconnect: () => {
+      fetchActivities();
+    }
+  });
 
   const formatEvent = (activity: ProjectActivity) => {
     const meta = activity.event_metadata ? JSON.parse(activity.event_metadata) : {};

@@ -48,8 +48,29 @@ def record_activity(db: Session, project_id: str, actor_id: str | None, event_ty
         event_metadata=json.dumps(event_metadata) if event_metadata else None
     )
     db.add(activity)
-    # the caller should commit if they want it transactionally bound, but we'll commit here for simplicity unless we refactor
-    # It's better not to commit here if it's part of a larger transaction, but many existing functions do db.commit() directly.
+
+    try:
+        from app.core.realtime import workspace_realtime_manager
+        from .models import Project
+        project = db.query(Project).filter(Project.id == project_id).first()
+        if project:
+            workspace_realtime_manager.broadcast_sync(
+                project.workspace_id,
+                "activity:created",
+                {
+                    "id": activity.id,
+                    "project_id": project_id,
+                    "workspace_id": project.workspace_id,
+                    "actor_id": actor_id,
+                    "event_type": event_type,
+                    "target_entity_type": target_entity_type,
+                    "target_entity_id": target_entity_id,
+                    "event_metadata": event_metadata or {},
+                }
+            )
+    except Exception:
+        pass
+
     return activity
 
 def get_project_activities(db: Session, project_id: str, limit: int = 50, offset: int = 0) -> list[ProjectActivity]:

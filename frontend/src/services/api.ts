@@ -52,6 +52,10 @@ export function extractErrorMessage(err: any, fallback: string = 'An unexpected 
 
   if (err.message && typeof err.message === 'string') {
     if (err.message === 'Network Error') {
+      const isProduction = import.meta.env.PROD || (import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.includes('127.0.0.1') && !import.meta.env.VITE_API_URL.includes('localhost'));
+      if (isProduction) {
+        return 'Network Error: Unable to reach the backend API. If the service was idle, it may be waking up (cold start) or unreachable. Please retry in a few moments.';
+      }
       return 'Network Error: Unable to reach the backend API. Please ensure the local server is running on http://127.0.0.1:8000.';
     }
     return err.message;

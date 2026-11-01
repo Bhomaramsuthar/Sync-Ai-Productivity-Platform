@@ -1,0 +1,214 @@
+/* ==========================================================================
+   Premium UI Components — Shared Styles
+   Hold-to-Delete, Lottie Wrappers, Navigation Indicators, etc.
+   ========================================================================== */
+
+/* ---- Hold-to-Delete Button ---- */
+.hold-to-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: rgba(239, 68, 68, 0.08);
+  color: #f87171;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  outline: none;
+  position: relative;
+  overflow: hidden;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.hold-to-delete-btn:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+.hold-to-delete-btn:focus-visible {
+  outline: 2px solid #ef4444;
+  outline-offset: 2px;
+}
+
+.hold-to-delete-btn.holding {
+  border-color: rgba(239, 68, 68, 0.6);
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.2);
+}
+
+.hold-to-delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Hold-to-Delete Fallback Confirmation Dialog */
+.hold-delete-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.hold-delete-confirm-dialog {
+  background: var(--bg-surface-elevated, #181d2a);
+  border: 1px solid var(--border-strong, rgba(255, 255, 255, 0.13));
+  border-radius: var(--radius-md, 14px);
+  padding: 1.5rem;
+  max-width: 380px;
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+}
+
+/* ---- Lottie Animation Wrapper ---- */
+.lottie-animation-wrapper {
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.lottie-animation-wrapper canvas {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* ---- Navigation Active Indicator ---- */
+.sidebar-nav-item {
+  position: relative;
+}
+
+.sidebar-nav-item .nav-active-indicator {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent-primary, #6366f1);
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
+}
+
+/* ---- Kinetic Text Screen Reader Only ---- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ---- AI Assistant Enhanced States ---- */
+.global-ai-launcher .ai-state-label {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  font-size: 0.55rem;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--bg-surface, #131722);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ---- Animated assistant icon state-based CSS animations ---- */
+@keyframes ai-icon-thinking-pulse {
+  0%, 100% { opacity: 0.7; filter: drop-shadow(0 0 4px rgba(99, 102, 241, 0.4)); }
+  50% { opacity: 1; filter: drop-shadow(0 0 10px rgba(129, 140, 248, 0.7)); }
+}
+
+@keyframes ai-icon-typing-bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+@keyframes ai-icon-success-flash {
+  0% { filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.6)); }
+  100% { filter: drop-shadow(0 0 2px rgba(16, 185, 129, 0.2)); }
+}
+
+@keyframes ai-icon-error-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 50%, 90% { transform: translateX(-2px); }
+  30%, 70% { transform: translateX(2px); }
+}
+
+.ai-icon-state-thinking .animated-assistant-icon-root {
+  animation: ai-icon-thinking-pulse 1.5s infinite ease-in-out;
+}
+
+.ai-icon-state-typing .animated-assistant-icon-root {
+  animation: ai-icon-typing-bounce 0.6s infinite ease-in-out;
+}
+
+.ai-icon-state-success .animated-assistant-icon-root {
+  animation: ai-icon-success-flash 0.5s ease-out;
+}
+
+.ai-icon-state-error .animated-assistant-icon-root {
+  animation: ai-icon-error-shake 0.5s ease-out;
+}
+
+/* ---- Reduced motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  .hold-to-delete-btn {
+    transition: none;
+  }
+
+  .hold-to-delete-btn.holding {
+    box-shadow: none;
+  }
+
+  .ai-icon-state-thinking .animated-assistant-icon-root,
+  .ai-icon-state-typing .animated-assistant-icon-root,
+  .ai-icon-state-success .animated-assistant-icon-root,
+  .ai-icon-state-error .animated-assistant-icon-root {
+    animation: none;
+  }
+}
+
+/* ---- Workspace Create Capacity Step Animation ---- */
+.capacity-step-animation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0.5rem 0;
+}
+
+.capacity-step-animation .lottie-animation-wrapper {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+/* ---- Invite Animation Container ---- */
+.invite-animation-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+}
+
+/* ---- Subscription Demo Container ---- */
+.subscription-animation-demo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed var(--border-subtle);
+}

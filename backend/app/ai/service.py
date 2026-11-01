@@ -117,6 +117,7 @@ def create_conversation_for_member(
         user_id=user_id,
         workspace_id=project.workspace_id,
         project_id=project.id,
+        scope="PROJECT",
         title=clean_title,
     )
     db.add(conversation)

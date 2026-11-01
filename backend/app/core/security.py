@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Any, Union
+from typing import Any, Union, Optional
 import bcrypt
 from jose import jwt
 from passlib.context import CryptContext
@@ -62,3 +62,15 @@ def create_access_token(subject: Union[str, Any], expires_delta: timedelta = Non
     to_encode = {"exp": expire, "sub": str(subject)}
     encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
     return encoded_jwt
+
+
+def decode_token(token: str) -> Optional[dict]:
+    """Safely decodes and verifies a JWT access token, returning payload dict or None."""
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+        return payload
+    except Exception as exc:
+        logger.debug("Token decode error: %s", exc)
+        return None
